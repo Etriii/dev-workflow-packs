@@ -5,6 +5,7 @@ Version 0.1.0; each stable skill ID equals its generic directory/frontmatter nam
 | Skill | Responsibility | Default mode |
 |---|---|---|
 | [plan-review](skills/plan-review/README.md) | Whole-plan coverage and dependencies | Planning |
+| [implementation-plan](skills/implementation-plan/README.md) | Source-grounded phased implementation package and prompts | Planning |
 | [blocker-check](skills/blocker-check/README.md) | Evidence-linked blockers and independent policy questions | Planning |
 | [phase-handoff](skills/phase-handoff/README.md) | Bounded Markdown handoff and checkpoint | Execution aid |
 | [completion-check](skills/completion-check/README.md) | Acceptance and integration evidence | Verification |

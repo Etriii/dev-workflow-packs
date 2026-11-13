@@ -28,7 +28,7 @@ NAMES = {
     "plan-review", "blocker-check", "phase-handoff", "completion-check",
     "environment-doctor", "phase-runner", "version-manager", "architecture-review",
     "frontend-review", "backend-review", "database-review", "security-privacy-review",
-    "business-rules-review", "delivery-readiness", "critical-review", "deep-critique", "prompt-intake",
+    "business-rules-review", "delivery-readiness", "critical-review", "deep-critique", "prompt-intake", "implementation-plan",
     "investigate-first", "lean-build", "surgical-patch", "safe-refactor", "migration", "verify-and-stop",
     "report-builder", "system-settings",
     "table-ux-review",
@@ -45,7 +45,7 @@ class CatalogTests(unittest.TestCase):
                 path = skill.path
                 metadata = catalog.validate_skill(path)
                 self.assertEqual(metadata["skill_id"], name)
-                expected_agents = [] if name in {"report-builder", "system-settings", "table-ux-review", "ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile"} else ["codex", "claude"]
+                expected_agents = [] if name in {"report-builder", "system-settings", "implementation-plan", "table-ux-review", "ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile"} else ["codex", "claude"]
                 self.assertEqual(metadata["compatible_agents"], expected_agents)
                 expected_files = {"SKILL.md", "README.md", "metadata.toml"}
                 if name == "deep-critique":
@@ -57,6 +57,8 @@ class CatalogTests(unittest.TestCase):
                     }
                 elif name == "system-settings":
                     expected_files |= {"references/discovery.md", "references/implementation.md"}
+                elif name == "implementation-plan":
+                    expected_files |= {"references/package-contract.md", "scripts/package_store.py"}
                 elif name in {"ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile"}:
                     expected_files |= {
                         "THIRD_PARTY.md", "assets/comparison.html",
@@ -140,6 +142,21 @@ class InstallerTests(unittest.TestCase):
                     installed_reference = (target / reference).resolve()
                     self.assertTrue(installed_reference.is_relative_to(target.resolve()))
                     self.assertTrue(installed_reference.is_file())
+        self.assertEqual(self.keep.read_text(), "developer-owned\n")
+
+    def test_selected_implementation_plan_includes_helper_for_both_agents(self):
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            result = install_skills.main([
+                "--agent", "both", "--project", str(self.project),
+                "--skills", "implementation-plan", "--yes",
+            ])
+        self.assertEqual(result, 0)
+        source = ROOT / "skills/implementation-plan"
+        for agent in (".agents", ".claude"):
+            target = self.target("implementation-plan", agent)
+            self.assertEqual(catalog.files_in(target), catalog.files_in(source))
+            self.assertTrue((target / "scripts/package_store.py").is_file())
+            self.assertTrue((target / "references/package-contract.md").is_file())
         self.assertEqual(self.keep.read_text(), "developer-owned\n")
 
     def test_one_codex_skill_only_and_idempotent_repeat(self):

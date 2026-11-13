@@ -1,6 +1,6 @@
 # Developer Skills pack
 
-Thirty independent skills for prompt intake, planning, UI/UX and mobile review, reports, system settings, implementation, generic critique, development reviews, delivery checks and handoff. Each README and metadata file is included in the payload manifest. No private runner, Docker or API key is required. The Python installer works offline once the source is downloaded.
+Thirty-one independent skills for prompt intake, implementation packages, planning, UI/UX and mobile review, reports, system settings, implementation, generic critique, development reviews, delivery checks and handoff. Each README and metadata file is included in the payload manifest. No private runner, Docker or API key is required. The Python installer works offline once the source is downloaded.
 
 This pack belongs to [Agent Skills](../../README.md). Each skill has its own README with installation, usage and prerequisites.
 
@@ -19,7 +19,7 @@ npx skills@1.7.4 add https://github.com/Etriii/agent-skills --skill system-setti
 
 Expected result: only system-settings is selected for Codex and Claude Code, with `.agents/skills/system-settings/SKILL.md` and `.claude/skills/system-settings/SKILL.md` under the application. Review the CLI summary, refresh the agent session, then use `$system-settings scan` or `/system-settings scan` in agent chat. For one agent choose `--agent codex` or `--agent claude-code`; add `-g` only for intended global availability.
 
-For all 30 Developer Skills instead, run this separate selection from the same application folder:
+For all Developer Skills published at that remote source, run this separate selection from the same application folder:
 
 ```powershell
 npx skills@1.7.4 add https://github.com/Etriii/agent-skills/tree/main/packs/developer-skills --skill '*' --agent codex claude-code --copy
@@ -37,7 +37,7 @@ python tools/install_skills.py --pack developer-skills --agent both --project "D
 python tools/install_skills.py --pack developer-skills --agent both --project "D:\My App" --bundle essential
 ```
 
-Essential contains plan-review, blocker-check, phase-handoff and completion-check. Use `--skills blocker-check` for one or `--bundle all` explicitly for all 30. Installation executes no skill. The pack-local `tools/install_skills.py` is an entry point to the same collection tool.
+Essential contains plan-review, blocker-check, phase-handoff and completion-check. Use `--skills blocker-check` for one or `--bundle all` explicitly for all 31. Installation executes no skill. The pack-local `tools/install_skills.py` is an entry point to the same collection tool.
 
 The [installation guide](../../INSTALL.md) covers user scope, integrity, matching-copy adoption, backup replacement and recovery. The [removal guide](../../UNINSTALL.md) gives tracked uninstall/reinstall commands. Completed changing operations create scoped Markdown history; removal preserves records and content backups.
 
@@ -57,6 +57,7 @@ Read [SKILL_CATALOG.md](SKILL_CATALOG.md) for selection and [docs/SKILL_STANDARD
 | [deep-critique](skills/deep-critique/README.md) | Full generic critique and ratings by default, with optional focused modes. |
 | [delivery-readiness](skills/delivery-readiness/README.md) | Check configuration, tested artifacts, rollout sequencing and recovery before delivery. |
 | [environment-doctor](skills/environment-doctor/README.md) | Inspect local tool availability, Git state and required services with read-only diagnostics. |
+| [implementation-plan](skills/implementation-plan/README.md) | Generate complete phased implementation packages with selected skills and safe ignored storage. |
 | [investigate-first](skills/investigate-first/README.md) | Diagnose unclear failures before proposing code changes. |
 | [lean-build](skills/lean-build/README.md) | Implement a bounded feature through existing owners. |
 | [migration](skills/migration/README.md) | Make compatibility-sensitive transitions with preservation and recovery proof. |
@@ -79,6 +80,8 @@ Read [SKILL_CATALOG.md](SKILL_CATALOG.md) for selection and [docs/SKILL_STANDARD
 | [version-manager](skills/version-manager/README.md) | Plan and record a development-plan version transition while preserving accepted history. |
 
 Invoke skills in agent chat with `$blocker-check` in Codex or `/blocker-check` in Claude Code, followed by the scope and relevant files. Refresh the agent session after installation. Reviews do not authorize implementation unless that skill's explicit scope and the user's instruction provide it.
+
+Use `$implementation-plan create "<feature>" --max-phases 5 --skills caveman,ultimate-ui-ux` to generate a package in the target project's ignored `docs/` area. The feature name and cap are examples; the cap and skills are optional. Read [its command guide](skills/implementation-plan/README.md) for revisions, stored prompts and checking. This new local skill needs a local-source install until published.
 
 Use `$prompt-intake <task>` to inspect a prompt before starting dependent work. Each new intake saves `.prompt-intake/questions-v001.md` or the next version and gives a next-action hint. Answer material questions through an available native question tool or in the file, then reply `continue` to resume the active intake. Clear tasks are recorded and proceed directly; automatic matching is not a global prompt interception hook.
 
