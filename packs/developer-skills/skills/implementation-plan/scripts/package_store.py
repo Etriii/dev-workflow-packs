@@ -14,6 +14,9 @@ import uuid
 
 
 OWNER = "implementation-plan"
+OUTPUT = ".implementation-plans"
+LEGACY_OUTPUT = "docs"
+STORE_MARKER = {"schema_version": 1, "owner": OWNER}
 SHARED = (
     "README.md", "PLAN.md", "CONTRACTS.md", "PHASES.md", "PROMPTS.md",
     "RUNBOOK.md", "ACCEPTANCE.md", "PROGRESS.md", "HANDOFF.md",
@@ -99,16 +102,19 @@ def write_new(path, value):
 
 def locate(package):
     package = safe(package)
-    if not RUN_ID.fullmatch(package.name) or package.parent.parent.name != "docs":
-        raise ValueError("Expected an exact docs/<feature>/<run-id> package path")
+    output_name = package.parent.parent.name
+    if not RUN_ID.fullmatch(package.name) or output_name not in (OUTPUT, LEGACY_OUTPUT):
+        raise ValueError("Expected an exact implementation package path")
+    if output_name == OUTPUT and read_json(package.parent.parent / ".implementation-plan-store.json") != STORE_MARKER:
+        raise ValueError("Unrecognized package store ownership")
     marker = read_json(package.parent / ".implementation-plan.json")
-    if marker != {"schema_version": 1, "owner": OWNER}:
+    if marker != STORE_MARKER:
         raise ValueError("Unrecognized feature folder ownership")
     data = read_json(package / ".package.json")
     if data.get("schema_version") != 1 or data.get("owner") != OWNER:
         raise ValueError("Unrecognized package metadata")
     root, is_git = project_root(package.parent.parent.parent)
-    if package.parent.parent != safe(root / "docs"):
+    if package.parent.parent != safe(root / output_name):
         raise ValueError("Package does not belong to its project root")
     return root, is_git, package, data
 
@@ -156,41 +162,50 @@ def validate_options(max_phases, skills, skills_mode, commits):
 def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits="off", previous=None):
     names = validate_options(max_phases, skills, skills_mode, commits)
     root, is_git = project_root(project)
-    docs = safe(root / "docs")
-    tracked_docs = bool(checked_git(root, "ls-files", "--", "docs").strip()) if is_git else False
-    docs_created = not docs.exists() and not tracked_docs
-    if docs.exists() and not docs.is_dir():
-        raise ValueError("docs is not a directory")
+    output = safe(root / OUTPUT)
+    store_marker = output / ".implementation-plan-store.json"
+    if output.exists():
+        if not output.is_dir():
+            raise ValueError("Implementation package root is not a directory")
+        if store_marker.exists():
+            if read_json(store_marker) != STORE_MARKER:
+                raise ValueError("Unrecognized package store ownership")
+        elif any(output.iterdir()):
+            raise ValueError("Existing package root has no ownership marker")
+    if is_git and checked_git(root, "ls-files", "--", OUTPUT).strip():
+        raise ValueError("Package output is tracked; no files were untracked")
     if previous:
         prior_root, _, prior_package, prior = locate(previous)
         if prior_root != root:
             raise ValueError("Previous package belongs to another project")
-        feature_root = prior_package.parent
         feature = prior["feature"]
+        slug = prior_package.parent.name
     else:
         slug = slugify(feature) + "-implementation"
-        feature_root = safe(docs / slug)
-        if feature_root.exists():
-            try:
-                owned = read_json(feature_root / ".implementation-plan.json")
-            except ValueError:
-                owned = None
-            if owned != {"schema_version": 1, "owner": OWNER}:
-                feature_root = safe(docs / (slug + "-" + uuid.uuid4().hex[:8]))
         prior_package = None
-    if is_git and checked_git(root, "ls-files", "--", feature_root.relative_to(root).as_posix()).strip():
-        raise ValueError("Package output is tracked; no files were untracked")
-    rule = "/docs/" if docs_created else f"/{feature_root.relative_to(root).as_posix()}/"
+    feature_root = safe(output / slug)
+    if feature_root.exists():
+        try:
+            owned = read_json(feature_root / ".implementation-plan.json")
+        except ValueError:
+            owned = None
+        if owned != STORE_MARKER:
+            if previous and prior_package.parent.parent.name == OUTPUT:
+                raise ValueError("Previous feature folder lost its ownership marker")
+            feature_root = safe(output / (slug + "-" + uuid.uuid4().hex[:8]))
+    rule = f"/{OUTPUT}/"
     probe = safe(feature_root / "20990101T000000Z-000000000000" / "prompts" / "P01.md")
     ensure_ignore(root, rule, probe, is_git)
-    docs.mkdir(exist_ok=True)
+    output.mkdir(exist_ok=True)
+    if not store_marker.exists():
+        write_new(store_marker, STORE_MARKER)
     feature_root.mkdir(exist_ok=True)
     marker = feature_root / ".implementation-plan.json"
     if marker.exists():
-        if read_json(marker) != {"schema_version": 1, "owner": OWNER}:
+        if read_json(marker) != STORE_MARKER:
             raise ValueError("Unrecognized feature folder ownership")
     else:
-        write_new(marker, {"schema_version": 1, "owner": OWNER})
+        write_new(marker, STORE_MARKER)
     for _ in range(10):
         run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ-") + uuid.uuid4().hex[:12]
         package = safe(feature_root / run_id)
@@ -277,27 +292,34 @@ def inspect(package):
 
 def list_packages(project):
     root, _ = project_root(project)
-    docs = safe(root / "docs")
-    if not docs.is_dir():
-        return []
     packages = []
-    for feature in sorted(docs.iterdir()):
-        if not feature.is_dir() or not (feature / ".implementation-plan.json").is_file():
+    for output_name in (OUTPUT, LEGACY_OUTPUT):
+        output = safe(root / output_name)
+        if not output.is_dir():
             continue
-        try:
-            if read_json(feature / ".implementation-plan.json") != {"schema_version": 1, "owner": OWNER}:
-                continue
-        except (OSError, ValueError, json.JSONDecodeError):
-            continue
-        for run in sorted(feature.iterdir()):
-            if not run.is_dir() or not RUN_ID.fullmatch(run.name):
-                continue
+        if output_name == OUTPUT:
             try:
-                _, _, package, data = locate(run)
+                if read_json(output / ".implementation-plan-store.json") != STORE_MARKER:
+                    continue
             except (OSError, ValueError, json.JSONDecodeError):
                 continue
-            packages.append({"package": str(package), "feature": data.get("feature"),
-                             "status": data.get("status")})
+        for feature in sorted(output.iterdir()):
+            if not feature.is_dir() or not (feature / ".implementation-plan.json").is_file():
+                continue
+            try:
+                if read_json(feature / ".implementation-plan.json") != STORE_MARKER:
+                    continue
+            except (OSError, ValueError, json.JSONDecodeError):
+                continue
+            for run in sorted(feature.iterdir()):
+                if not run.is_dir() or not RUN_ID.fullmatch(run.name):
+                    continue
+                try:
+                    _, _, package, data = locate(run)
+                except (OSError, ValueError, json.JSONDecodeError):
+                    continue
+                packages.append({"package": str(package), "feature": data.get("feature"),
+                                 "status": data.get("status")})
     return packages
 
 

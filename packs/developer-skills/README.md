@@ -81,7 +81,7 @@ Read [SKILL_CATALOG.md](SKILL_CATALOG.md) for selection and [docs/SKILL_STANDARD
 
 Invoke skills in agent chat with `$blocker-check` in Codex or `/blocker-check` in Claude Code, followed by the scope and relevant files. Refresh the agent session after installation. Reviews do not authorize implementation unless that skill's explicit scope and the user's instruction provide it.
 
-Use `$implementation-plan create "<feature>" --max-phases 5 --skills caveman,ultimate-ui-ux` to generate a package in the target project's ignored `docs/` area. The feature name and cap are examples; the cap and skills are optional. Read [its command guide](skills/implementation-plan/README.md) for revisions, stored prompts and checking. This new local skill needs a local-source install until published.
+Use `$implementation-plan create "<feature>" --max-phases 5 --skills caveman,ultimate-ui-ux` to generate a package under the target project's ignored `.implementation-plans/` folder. The feature name and cap are examples; the cap and skills are optional. Read [its command guide](skills/implementation-plan/README.md) for revisions, stored prompts and checking. This new local skill needs a local-source install until published.
 
 Use `$prompt-intake <task>` to inspect a prompt before starting dependent work. Each new intake saves `.prompt-intake/questions-v001.md` or the next version and gives a next-action hint. Answer material questions through an available native question tool or in the file, then reply `continue` to resume the active intake. Clear tasks are recorded and proceed directly; automatic matching is not a global prompt interception hook.
 

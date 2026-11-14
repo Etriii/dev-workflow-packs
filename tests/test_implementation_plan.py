@@ -44,11 +44,13 @@ class PackageStoreTests(unittest.TestCase):
         }
         (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
 
-    def test_missing_docs_ignores_docs_and_keeps_revisions(self):
+    def test_new_store_is_ignored_and_revisions_preserve_history(self):
         self.init_git()
         first = store.start(self.root, "Hiring and Workforce", 3, "caveman,ultimate-ui-ux")
         package = Path(first["package"])
-        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/docs/\n")
+        self.assertEqual(package.parent.parent.name, store.OUTPUT)
+        self.assertFalse((self.root / "docs").exists())
+        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/.implementation-plans/\n")
         self.assertTrue(first["git_exclusion_verified"])
         self.save_complete(package)
         self.assertEqual(store.inspect(package)["errors"], [])
@@ -59,9 +61,9 @@ class PackageStoreTests(unittest.TestCase):
         self.assertNotEqual(next_package, package)
         self.assertEqual(json.loads((next_package / ".package.json").read_text())["previous"], str(package))
         self.assertTrue((package / "PLAN.md").exists())
-        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/docs/\n")
+        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/.implementation-plans/\n")
 
-    def test_existing_tracked_docs_gets_narrow_rule(self):
+    def test_existing_tracked_docs_are_untouched(self):
         self.init_git()
         docs = self.root / "docs"
         docs.mkdir()
@@ -69,7 +71,7 @@ class PackageStoreTests(unittest.TestCase):
         self.git("add", "docs/existing.md")
         before = (docs / "existing.md").read_bytes()
         result = store.start(docs, "Hiring")
-        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/docs/hiring-implementation/\n")
+        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/.implementation-plans/\n")
         self.assertEqual((docs / "existing.md").read_bytes(), before)
         self.assertIn("docs/existing.md", self.git("ls-files"))
         self.assertTrue(result["git_exclusion_verified"])
@@ -81,10 +83,10 @@ class PackageStoreTests(unittest.TestCase):
         original = b"# Existing\r\n/cache/\r\n"
         (self.root / ".gitignore").write_bytes(original)
         store.start(self.root, "Roster")
-        self.assertEqual((self.root / ".gitignore").read_bytes(), original + b"/docs/roster-implementation/\r\n")
+        self.assertEqual((self.root / ".gitignore").read_bytes(), original + b"/.implementation-plans/\r\n")
         self.assertEqual((self.root / "docs" / "personal.md").read_text(), "keep")
 
-    def test_deleted_but_indexed_docs_still_gets_narrow_rule(self):
+    def test_deleted_but_indexed_docs_are_untouched(self):
         self.init_git()
         docs = self.root / "docs"
         docs.mkdir()
@@ -93,21 +95,23 @@ class PackageStoreTests(unittest.TestCase):
         (docs / "indexed.md").unlink()
         docs.rmdir()
         store.start(self.root, "Roster")
-        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/docs/roster-implementation/\n")
+        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/.implementation-plans/\n")
+        self.assertFalse(docs.exists())
         self.assertIn("docs/indexed.md", self.git("ls-files"))
 
     def test_ignore_exception_gets_effective_final_rule(self):
         self.init_git()
-        (self.root / "docs").mkdir()
-        original = b"/docs/*\n!/docs/hiring-implementation/\n"
+        (self.root / store.OUTPUT).mkdir()
+        original = b"/.implementation-plans/*\n!/.implementation-plans/hiring-implementation/\n"
         (self.root / ".gitignore").write_bytes(original)
         package = Path(store.start(self.root, "Hiring")["package"])
-        self.assertEqual((self.root / ".gitignore").read_bytes(), original + b"/docs/hiring-implementation/\n")
+        self.assertEqual((self.root / ".gitignore").read_bytes(), original + b"/.implementation-plans/\n")
         self.assertEqual(store.inspect(package)["git_exclusion_verified"], True)
 
     def test_unowned_name_gets_unique_folder_and_tracked_output_is_refused(self):
         self.init_git()
-        existing = self.root / "docs" / "hiring-implementation"
+        store.start(self.root, "Roster")
+        existing = self.root / store.OUTPUT / "hiring-implementation"
         existing.mkdir(parents=True)
         (existing / "existing.txt").write_text("unrelated")
         first = Path(store.start(self.root, "Hiring")["package"])
@@ -117,10 +121,38 @@ class PackageStoreTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "tracked"):
             store.start(self.root, "Hiring", previous=first)
 
+    def test_unowned_store_is_refused_before_ignore_changes(self):
+        self.init_git()
+        output = self.root / store.OUTPUT
+        output.mkdir()
+        (output / "unrelated.txt").write_text("keep", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "ownership marker"):
+            store.start(self.root, "Hiring")
+        self.assertFalse((self.root / ".gitignore").exists())
+        self.assertEqual((output / "unrelated.txt").read_text(), "keep")
+
+    def test_legacy_docs_package_can_be_read_and_revised_in_new_store(self):
+        self.init_git()
+        current = Path(store.start(self.root, "Hiring")["package"])
+        legacy = self.root / "docs" / "hiring-implementation" / current.name
+        legacy.mkdir(parents=True)
+        (legacy.parent / ".implementation-plan.json").write_text(
+            json.dumps(store.STORE_MARKER), encoding="utf-8"
+        )
+        (legacy / ".package.json").write_bytes((current / ".package.json").read_bytes())
+        with (self.root / ".gitignore").open("ab") as stream:
+            stream.write(b"/docs/hiring-implementation/\n")
+        self.assertEqual(store.locate(legacy)[2], legacy)
+        self.assertIn(str(legacy), [item["package"] for item in store.list_packages(self.root)])
+        revised = Path(store.start(self.root, "Ignored title", previous=legacy)["package"])
+        self.assertEqual(revised.parent.parent.name, store.OUTPUT)
+        self.assertEqual(json.loads((revised / ".package.json").read_text())["previous"], str(legacy))
+        self.assertTrue((legacy / ".package.json").exists())
+
     def test_non_git_and_invalid_options(self):
         result = store.start(self.root, "Scheduling", commits="off")
         self.assertFalse(result["git_exclusion_verified"])
-        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/docs/\n")
+        self.assertEqual((self.root / ".gitignore").read_bytes(), b"/.implementation-plans/\n")
         with self.assertRaisesRegex(ValueError, "positive"):
             store.start(self.root, "Scheduling", max_phases=0)
         with self.assertRaisesRegex(ValueError, "unique"):
