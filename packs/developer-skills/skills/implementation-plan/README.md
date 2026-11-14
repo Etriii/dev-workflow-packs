@@ -4,18 +4,18 @@ Start from an existing Codex or Claude Markdown plan, a PDF requirements brief w
 
 ## Start in agent chat
 
-After installing the skill, refresh the agent session and open the target project. Codex uses `$implementation-plan`; Claude Code uses `/implementation-plan`. These are chat requests, not terminal commands. Replace the example path with your own UTF-8 Markdown plan file. The path follows the skill name directly; quote paths with spaces.
+After installing the skill, refresh the agent session and open the target project. Codex uses `$implementation-plan`; Claude Code uses `/implementation-plan`. These are chat requests, not terminal commands. Replace `<plan-file.md>` with the path to your UTF-8 Markdown plan. The path follows the skill name directly; quote paths with spaces.
 
 ```text
-$implementation-plan "D:\My App\docs\hiring-plan.md" --skills caveman,ultimate-ui-ux
+$implementation-plan "<plan-file.md>" --skills caveman,ultimate-ui-ux
 ```
 
-In Claude Code, replace `$implementation-plan` with `/implementation-plan`. To start without a file, use `$implementation-plan create "Hiring and workforce management"` or invoke it bare and provide the task when asked. A plain non-path task remains a `create` shortcut. A missing path-like argument is reported as a missing file. Use `--project "D:\My App"` if the target project is not the open one; the plan file may be outside that project.
+In Claude Code, replace `$implementation-plan` with `/implementation-plan`. To start without a file, use `$implementation-plan create "<task-description>"` or invoke it bare and provide the task when asked. A plain non-path task remains a `create` shortcut. A missing path-like argument is reported as a missing file. Use `--project "<project-path>"` if the target project is not the open one; the plan file may be outside that project.
 
-If you have instructions or requirements in a PDF but no plan yet, give its path and the existing application project. Replace both example paths:
+If you have instructions or requirements in a PDF but no plan yet, give its path and the existing application project. Replace `<requirements-file.pdf>` and `<project-path>` with real paths:
 
 ```text
-$implementation-plan "D:\Requirements\programmer-instructions.pdf" --project "D:\My App"
+$implementation-plan "<requirements-file.pdf>" --project "<project-path>"
 ```
 
 The skill reads the PDF as source requirements, checks unclear or conflicting details, asks questions, and forms a working plan from the answers. If the PDF already contains a plan, it can use that plan instead. It will not treat a requirements brief as an approved implementation plan.
@@ -23,7 +23,7 @@ The skill reads the PDF as source requirements, checks unclear or conflicting de
 You may put options before the plan path if that reads more naturally. This is an alternative chat request:
 
 ```text
-$implementation-plan --skills migration,verify-and-stop --max-phases 4 --test-scope full "D:\My App\docs\hiring-plan.md"
+$implementation-plan --skills migration,verify-and-stop --max-phases 4 --test-scope full "<plan-file.md>"
 ```
 
 The named skills must be installed and relevant; the skill reads their instructions before assigning or using them.
@@ -55,8 +55,8 @@ Every saved package has `ORIGINAL_PLAN.md`, `README.md`, `PLAN.md`, `CONTRACTS.m
 The examples below are independent chat requests. Use the exact path returned by `create` or `revise` in place of `<package>`.
 
 ```text
-$implementation-plan create "Hiring and workforce management" --project "D:\My App" --max-phases 5 --skills caveman,ultimate-ui-ux --skills-mode auto
-$implementation-plan revise <package> "Add a separate migration gate" --max-phases 6
+$implementation-plan create "<task-description>" --project "<project-path>" --max-phases 5 --skills caveman,ultimate-ui-ux --skills-mode auto
+$implementation-plan revise <package> "<change-description>" --max-phases 6
 $implementation-plan skills <package>
 $implementation-plan skills <package> --add migration,verify-and-stop --skills-mode auto
 $implementation-plan skills <package> --remove ultimate-ui-ux --skills-mode all
@@ -83,31 +83,31 @@ Package choices save under `<project-root>/.implementation-plans/<feature>-imple
 
 Prerequisites: Node.js 22.20+ with npm/npx, network access for npm/GitHub, and Git for repository fallback. These are installer requirements. At runtime, this skill's bundled helper needs Python 3.11+ and Git for exclusion verification inside a Git project; the target application has its own requirements. PDF input also needs a PDF reader available to the agent for content inspection. The helper only validates and copies PDF bytes; it does not extract text or perform OCR. If the document cannot be read reliably, provide an accessible text copy before planning.
 
-PowerShell, starting in the target application folder; replace `D:\My App` with your project path. Run the lines separately:
+PowerShell, starting in the target application folder; replace `<project-path>` with your existing project path. Run the lines separately:
 
 ```powershell
-Set-Location 'D:\My App'
+Set-Location '<project-path>'
 npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill implementation-plan --agent codex claude-code --copy
 ```
 
-This is project scope for Codex and Claude Code. For one agent, use `--agent codex` or `--agent claude-code`. Review the CLI's destination summary; expected copies include `.agents/skills/implementation-plan/SKILL.md`, its `scripts/` and `references/`, and the corresponding Claude skill location when selected. Refresh the agent session, then invoke the skill separately in chat. The remote command reads published files; local changes are available only from a local source until they are pushed. For the current local checkout, use its actual path as the npx source:
+This is project scope for Codex and Claude Code. For one agent, use `--agent codex` or `--agent claude-code`. Review the CLI's destination summary; expected copies include `.agents/skills/implementation-plan/SKILL.md`, its `scripts/` and `references/`, and the corresponding Claude skill location when selected. Refresh the agent session, then invoke the skill separately in chat. The remote command reads published files; local changes are available only from a local source until they are pushed. For a complete local checkout, replace `<collection-root>` with its path as the npx source:
 
 ```powershell
-npx skills@1.7.4 add 'D:\ACollectionOfDevelopedSystems\ActiveDevelopment\dev-workflow-packs' --skill implementation-plan --agent codex claude-code --copy
+npx skills@1.7.4 add '<collection-root>' --skill implementation-plan --agent codex claude-code --copy
 ```
 
 This local-source command also starts from the target application folder. It installs the current local checkout, not a remote snapshot. A missing remote skill name means it has not been published there; do not silently switch sources. See the [npx guide](../../../../docs/NPX_INSTALLATION.md) for updates and removal. Use the installer that owns an existing copy.
 
 ### Optional recorded/offline Python installation
 
-First obtain the complete collection by the [ZIP or Git instructions](../../../../INSTALL.md#optional-local-copy-for-python-and-offline-use). Find its inner root containing `tools/` and `packs/`; `tools/install_skills.py` is a local script there, not a global command. Python 3.11+ is required. PowerShell, starting in that collection root, preview and install in separate commands; replace `D:\My App` with the target project:
+First obtain the complete collection by the [ZIP or Git instructions](../../../../INSTALL.md#optional-local-copy-for-python-and-offline-use). Find its inner root containing `tools/` and `packs/`; `tools/install_skills.py` is a local script there, not a global command. Python 3.11+ is required. PowerShell, starting in that collection root, preview and install in separate commands; replace `<project-path>` with the target project:
 
 ```powershell
-python tools/install_skills.py --pack developer-skills --agent both --project 'D:\My App' --skills implementation-plan --dry-run
+python tools/install_skills.py --pack developer-skills --agent both --project '<project-path>' --skills implementation-plan --dry-run
 ```
 
 ```powershell
-python tools/install_skills.py --pack developer-skills --agent both --project 'D:\My App' --skills implementation-plan
+python tools/install_skills.py --pack developer-skills --agent both --project '<project-path>' --skills implementation-plan
 ```
 
 The preview changes nothing. The second command writes recorded project copies and retains installer ownership, backups and Markdown history. `--agent both` is specific to the Python installer; npx uses `--agent codex claude-code`. A prior Python-managed copy must be updated or removed through the Python installer, not implicitly migrated by npx. Installation itself creates no implementation package.
