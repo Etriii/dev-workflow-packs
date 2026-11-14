@@ -35,6 +35,8 @@ class PackageStoreTests(unittest.TestCase):
     def save_complete(self, package):
         for name in store.SHARED:
             (package / name).write_text(f"# {name}\n", encoding="utf-8")
+        if not (package / store.ORIGINAL_PLAN).exists():
+            (package / store.ORIGINAL_PLAN).write_text("# Session plan\n", encoding="utf-8")
         (package / "prompts" / "P01_BUILD.md").write_text("Implement P01 only.\n", encoding="utf-8")
         metadata = json.loads((package / ".package.json").read_text(encoding="utf-8"))
         metadata["phases"] = {"P01": "P01_BUILD.md"}
@@ -75,6 +77,56 @@ class PackageStoreTests(unittest.TestCase):
         self.assertEqual((docs / "existing.md").read_bytes(), before)
         self.assertIn("docs/existing.md", self.git("ls-files"))
         self.assertTrue(result["git_exclusion_verified"])
+
+    def test_file_plan_is_copied_exactly_and_checked(self):
+        self.init_git()
+        source = self.root / "codex-plan.md"
+        original = b"# Plan\r\n\r\n[External note](../note.md)\r\n"
+        source.write_bytes(original)
+        package = Path(store.start(self.root, "Hiring", source_plan=source)["package"])
+        self.assertEqual((package / store.ORIGINAL_PLAN).read_bytes(), original)
+        self.save_complete(package)
+        self.assertEqual(store.inspect(package)["errors"], [])
+        revised = Path(store.start(self.root, "Ignored title", previous=package)["package"])
+        self.assertEqual((revised / store.ORIGINAL_PLAN).read_bytes(), original)
+        self.save_complete(revised)
+        self.assertEqual(store.inspect(revised)["errors"], [])
+        (package / store.ORIGINAL_PLAN).write_text("# Changed\n", encoding="utf-8")
+        self.assertIn("Original plan differs from its source snapshot", store.inspect(package)["errors"])
+        with self.assertRaisesRegex(ValueError, "Previous original plan differs"):
+            store.start(self.root, "Ignored title", previous=package)
+
+    def test_cli_accepts_source_plan_and_requires_session_plan(self):
+        self.init_git()
+        source = self.root / "claude-plan.md"
+        source.write_text("# Source plan\n", encoding="utf-8")
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(store.main(["start", "--project", str(self.root),
+                                         "--feature", "Hiring", "--source-plan", str(source)]), 0)
+        package = Path(json.loads(output.getvalue())["package"])
+        self.assertEqual((package / store.ORIGINAL_PLAN).read_bytes(), source.read_bytes())
+        session = Path(store.start(self.root, "Scheduling")["package"])
+        self.assertIn("Missing ORIGINAL_PLAN.md", store.inspect(session)["errors"])
+
+    def test_invalid_source_plan_does_not_create_output(self):
+        self.init_git()
+        source = self.root / "bad-plan.md"
+        source.write_bytes(b"\xff\xfe")
+        with self.assertRaisesRegex(ValueError, "UTF-8"):
+            store.start(self.root, "Hiring", source_plan=source)
+        self.assertFalse((self.root / store.OUTPUT).exists())
+        self.assertFalse((self.root / ".gitignore").exists())
+
+    def test_legacy_package_remains_readable_without_original_plan(self):
+        package = Path(store.start(self.root, "Hiring")["package"])
+        self.save_complete(package)
+        (package / store.ORIGINAL_PLAN).unlink()
+        data = json.loads((package / ".package.json").read_text(encoding="utf-8"))
+        data["schema_version"] = 1
+        data.pop("source_plan")
+        (package / ".package.json").write_text(json.dumps(data), encoding="utf-8")
+        self.assertEqual(store.inspect(package)["errors"], [])
 
     def test_existing_untracked_docs_preserves_existing_ignore_bytes(self):
         self.init_git()
@@ -168,6 +220,19 @@ class PackageStoreTests(unittest.TestCase):
         data["phases"]["P02"] = "P02_EXTRA.md"
         (package / ".package.json").write_text(json.dumps(data))
         self.assertIn("Phase count exceeds maximum", store.inspect(package)["errors"])
+
+    def test_selected_phase_count_is_exact_and_respects_cap(self):
+        self.init_git()
+        package = Path(store.start(self.root, "Offer", max_phases=3, phase_count=2)["package"])
+        self.save_complete(package)
+        self.assertIn("Phase count differs from selected count", store.inspect(package)["errors"])
+        (package / "prompts" / "P02_VERIFY.md").write_text("Verify P02 only.\n", encoding="utf-8")
+        data = json.loads((package / ".package.json").read_text(encoding="utf-8"))
+        data["phases"]["P02"] = "P02_VERIFY.md"
+        (package / ".package.json").write_text(json.dumps(data), encoding="utf-8")
+        self.assertEqual(store.inspect(package)["errors"], [])
+        with self.assertRaisesRegex(ValueError, "within --max-phases"):
+            store.start(self.root, "Offer", max_phases=1, phase_count=2)
 
     def test_broken_links_and_skill_assignments_are_reported(self):
         self.init_git()

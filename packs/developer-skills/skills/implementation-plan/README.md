@@ -1,24 +1,53 @@
 # Implementation Plan
 
-Create a complete, source-grounded implementation package with shared specifications, separate one-phase prompts, acceptance checks, progress and handoff. A saved package is a plan; use a selected prompt in a later agent request to implement its phase.
+Start from an existing Codex or Claude plan file, or describe a task without one. The skill asks planning questions, recommends compact and balanced phase counts, and lets you implement, save a complete phase package, or save it and begin the first phase. A saved package contains shared specifications, separate one-phase prompts, acceptance checks, progress and handoff.
 
 ## Start in agent chat
 
-After installing the skill, refresh the agent session and open the target project. Codex uses `$implementation-plan`; Claude Code uses `/implementation-plan`. These are chat requests, not terminal commands. Replace `D:\My App`, the feature name, and package paths with your actual values.
+After installing the skill, refresh the agent session and open the target project. Codex uses `$implementation-plan`; Claude Code uses `/implementation-plan`. These are chat requests, not terminal commands. Replace the example path with your own UTF-8 Markdown plan file. The path follows the skill name directly; quote paths with spaces.
 
 ```text
-$implementation-plan create "Hiring and workforce management" --project "D:\My App" --max-phases 5 --skills caveman,ultimate-ui-ux --skills-mode auto
+$implementation-plan "D:\My App\docs\hiring-plan.md" --skills caveman,ultimate-ui-ux
 ```
 
-The project path is optional when the target project is open. Bare `$implementation-plan` asks for a task and saves nothing. `$implementation-plan "Hiring and workforce management"` is the `create` shortcut. Without `--max-phases`, the agent chooses the fewest coherent phases. The positive integer cap is strict; the agent asks if the agreed scope cannot fit. The skill inspects actual source and instructions before writing. It asks only for material decisions missing from that evidence.
+In Claude Code, replace `$implementation-plan` with `/implementation-plan`. To start without a file, use `$implementation-plan create "Hiring and workforce management"` or invoke it bare and provide the task when asked. A plain non-path task remains a `create` shortcut. A missing path-like argument is reported as a missing file. Use `--project "D:\My App"` if the target project is not the open one; the plan file may be outside that project.
 
-Every saved package has `README.md`, `PLAN.md`, `CONTRACTS.md`, `PHASES.md`, `PROMPTS.md`, `RUNBOOK.md`, `ACCEPTANCE.md`, `PROGRESS.md`, `HANDOFF.md`, `BLOCKERS.md`, `COMMIT_MESSAGES.md`, and a separate file under `prompts/` for each phase. Initially, unexecuted checks remain `NOT_RUN`. One prompt executes one phase when later pasted; package creation does not implement it.
+You may put `--skills` before the plan path if that reads more naturally. This is an alternative chat request:
+
+```text
+$implementation-plan --skills migration,verify-and-stop --max-phases 4 "D:\My App\docs\hiring-plan.md"
+```
+
+The named skills must be installed and relevant; the skill reads their instructions before assigning or using them.
+
+The skill inspects the plan and current source before asking. It **always** asks you to choose phase sizing:
+
+| Choice | Meaning |
+|---|---|
+| **Compact** | Use the recommended exact count with fewer coherent phases. |
+| **Balanced** | Use the recommended exact count with more room for implementation and verification. |
+| **Custom maximum** | Supply a positive hard cap, such as 4; the skill proposes and confirms an exact count of at most 4. |
+
+The recommendations include the work and checks that fit each count. A one-phase option appears when the work can reasonably finish in one session. `--max-phases N` pre-fills Custom maximum but does not skip the question. If the cap cannot fit the work, the skill asks you to increase it or narrow the scope. It also **always** asks you to select one action:
+
+| Choice | Effect | Recommended default |
+|---|---|---|
+| **Implement now** | Implement the selected ready scope and run its checks. No package is created. | When all work and proof fit one session. |
+| **Prepare phase package** | Write and check the ignored package without implementing. | When work spans sessions. |
+| **Prepare package, then implement** | Write and check the package, then implement only its first ready phase. | Select when you want both durable files and an immediate start. |
+
+Other questions concern only decisions the plan and source cannot settle, such as scope, business rules, acceptance, permissions, or selected skills. Missing answers stop dependent work. A multi-phase implementation stops after its first authorized phase. None of the choices authorizes a push, deployment or production data change.
+
+You can combine this skill with Codex or Claude's built-in Plan mode: finish its questions and use the agreed plan as this skill's input, either in the same conversation or as a saved file. This skill's three choices are its own question; it does not change the host's built-in menu. While the host remains in read-only Plan mode, the skill can ask and plan but waits for execution mode before saving files or implementing.
+
+Every saved package has `ORIGINAL_PLAN.md`, `README.md`, `PLAN.md`, `CONTRACTS.md`, `PHASES.md`, `PROMPTS.md`, `RUNBOOK.md`, `ACCEPTANCE.md`, `PROGRESS.md`, `HANDOFF.md`, `BLOCKERS.md`, `COMMIT_MESSAGES.md`, and a separate file under `prompts/` for each phase. A supplied plan is copied byte for byte into `ORIGINAL_PLAN.md`; answers go in `PLAN.md`. Without a file, the agreed session plan becomes `ORIGINAL_PLAN.md`. Initially, unexecuted checks remain `NOT_RUN`.
 
 ## Commands and options
 
 The examples below are independent chat requests. Use the exact path returned by `create` or `revise` in place of `<package>`.
 
 ```text
+$implementation-plan create "Hiring and workforce management" --project "D:\My App" --max-phases 5 --skills caveman,ultimate-ui-ux --skills-mode auto
 $implementation-plan revise <package> "Add a separate migration gate" --max-phases 6
 $implementation-plan skills <package>
 $implementation-plan skills <package> --add migration,verify-and-stop --skills-mode auto
@@ -32,11 +61,11 @@ $implementation-plan help
 
 `revise` and changing `skills` requests save a new revision, preserve earlier files and valid evidence, and report the new path. Omitted options inherit prior values. `skills` without changes, `prompt`, `check`, `status`, and `help` are read-only. Unknown phase IDs and invalid option combinations are errors. Adding and removing the same skill in one request is invalid. `status` without a path lists recognized packages in the current project; it does not select one for editing.
 
-`--skills name1,name2` selects skills. The default `--skills-mode auto` reads their instructions and assigns them to the phases where they fit. `--skills-mode all` places all selected skills in every prompt; conflicts and missing skills are reported rather than silently resolved. The skill does not install selected skills. `--commits off` is the default: prompts may draft messages but do not authorize commits. `--commits scoped` makes a later phase-prompt invocation authorize only that phase's owned local commits after required checks pass. It never authorizes a push or deployment. Both options can be used on creation or revision.
+`--max-phases N` proposes the Custom maximum hard cap. The skill confirms it and the resulting exact phase count before acting. The package store records both values and rejects a count above the cap. `--skills name1,name2` selects skills. The default `--skills-mode auto` reads their instructions and assigns them to relevant phases. `--skills-mode all` places all selected skills in every prompt; conflicts and missing skills are reported rather than silently resolved. The skill does not install selected skills. `--commits off` is the default: prompts may draft messages but do not authorize commits. `--commits scoped` authorizes only owned local commits after selected implementation and required checks pass, subject to repository rules. It never authorizes a push or deployment.
 
-New packages live under `<project-root>/.implementation-plans/<feature>-implementation/<UTC-run-id>/`. Each revision has a unique run directory. The skill adds `/.implementation-plans/` to the root `.gitignore` when needed and verifies exclusion before saving. It leaves existing `docs/` content untouched. Earlier packages under `docs/` remain readable; revisions of them use the new root and link back to the old path without moving it. Tracked output is refused without automatic untracking. In a non-Git project exclusion is unverified. Resume an identified draft revision after interruption; never overwrite or discard an earlier one. A failed storage check stops saving and reports the exact reason.
+Package choices save under `<project-root>/.implementation-plans/<feature>-implementation/<UTC-run-id>/`. Each revision has a unique run directory. The skill adds `/.implementation-plans/` to the root `.gitignore` when needed and verifies exclusion before saving. It leaves existing `docs/` content untouched. Earlier packages under `docs/` remain readable; revisions of them use the new root and link back to the old path without moving it. Tracked output is refused without automatic untracking. In a non-Git project exclusion is unverified. Resume an identified draft revision after interruption; never overwrite or discard an earlier one. A failed storage check stops saving and reports the exact reason.
 
-`check` confirms the package structure and requires a separate author review of requirement coverage, dependencies, links, prompt scope and evidence claims. A passing check does not prove implementation, native agent adherence or runtime behavior. Invoke the exact stored prompt from `prompt <package> P01` when work on that phase is intended; it stops at that phase.
+`check` confirms the package structure and requires a separate author review of requirement coverage, dependencies, links, prompt scope and evidence claims. A passing check does not prove implementation, native agent adherence or runtime behavior. With Prepare phase package, invoke the exact stored prompt from `prompt <package> P01` in a later request when work on that phase is intended; it stops at that phase.
 
 ## Install
 
@@ -51,7 +80,7 @@ Set-Location 'D:\My App'
 npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill implementation-plan --agent codex claude-code --copy
 ```
 
-This is project scope for Codex and Claude Code. For one agent, use `--agent codex` or `--agent claude-code`. Review the CLI's destination summary; expected copies include `.agents/skills/implementation-plan/SKILL.md`, its `scripts/` and `references/`, and the corresponding Claude skill location when selected. Refresh the agent session, then invoke the skill separately in chat. The remote command reads published files. Until this new skill is published, use the actual local collection root as the npx source:
+This is project scope for Codex and Claude Code. For one agent, use `--agent codex` or `--agent claude-code`. Review the CLI's destination summary; expected copies include `.agents/skills/implementation-plan/SKILL.md`, its `scripts/` and `references/`, and the corresponding Claude skill location when selected. Refresh the agent session, then invoke the skill separately in chat. The remote command reads published files; local changes are available only from a local source until they are pushed. For the current local checkout, use its actual path as the npx source:
 
 ```powershell
 npx skills@1.7.4 add 'D:\ACollectionOfDevelopedSystems\ActiveDevelopment\dev-workflow-packs' --skill implementation-plan --agent codex claude-code --copy

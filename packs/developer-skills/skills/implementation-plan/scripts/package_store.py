@@ -2,6 +2,7 @@
 
 import argparse
 from datetime import datetime, timezone
+from hashlib import sha256
 import json
 import os
 from pathlib import Path
@@ -22,6 +23,7 @@ SHARED = (
     "RUNBOOK.md", "ACCEPTANCE.md", "PROGRESS.md", "HANDOFF.md",
     "BLOCKERS.md", "COMMIT_MESSAGES.md",
 )
+ORIGINAL_PLAN = "ORIGINAL_PLAN.md"
 PHASE_ID = re.compile(r"P\d{2,}")
 RUN_ID = re.compile(r"\d{8}T\d{6}Z-[0-9a-f]{12}")
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
@@ -111,7 +113,7 @@ def locate(package):
     if marker != STORE_MARKER:
         raise ValueError("Unrecognized feature folder ownership")
     data = read_json(package / ".package.json")
-    if data.get("schema_version") != 1 or data.get("owner") != OWNER:
+    if data.get("schema_version") not in (1, 2) or data.get("owner") != OWNER:
         raise ValueError("Unrecognized package metadata")
     root, is_git = project_root(package.parent.parent.parent)
     if package.parent.parent != safe(root / output_name):
@@ -148,9 +150,11 @@ def ensure_ignore(root, rule, probe, is_git):
         raise ValueError("Git did not confirm package exclusion")
 
 
-def validate_options(max_phases, skills, skills_mode, commits):
+def validate_options(max_phases, skills, skills_mode, commits, phase_count=None):
     if max_phases is not None and max_phases < 1:
         raise ValueError("--max-phases must be positive")
+    if phase_count is not None and (phase_count < 1 or (max_phases is not None and phase_count > max_phases)):
+        raise ValueError("--phase-count must be positive and within --max-phases")
     if skills_mode not in ("auto", "all") or commits not in ("off", "scoped"):
         raise ValueError("Invalid skills mode or commit policy")
     names = [name.strip() for name in (skills or "").split(",") if name.strip()]
@@ -159,8 +163,22 @@ def validate_options(max_phases, skills, skills_mode, commits):
     return names
 
 
-def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits="off", previous=None):
-    names = validate_options(max_phases, skills, skills_mode, commits)
+def source_snapshot(path):
+    source = regular(path)
+    if not source.is_file():
+        raise ValueError(f"Source plan does not exist: {source}")
+    content = source.read_bytes()
+    try:
+        body = content.decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise ValueError("Source plan must be UTF-8 Markdown") from error
+    if not body.strip() or "\x00" in body:
+        raise ValueError("Source plan must contain nonempty Markdown text")
+    return content
+
+
+def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits="off", previous=None, source_plan=None, phase_count=None):
+    names = validate_options(max_phases, skills, skills_mode, commits, phase_count)
     root, is_git = project_root(project)
     output = safe(root / OUTPUT)
     store_marker = output / ".implementation-plan-store.json"
@@ -183,6 +201,22 @@ def start(project, feature, max_phases=None, skills="", skills_mode="auto", comm
     else:
         slug = slugify(feature) + "-implementation"
         prior_package = None
+        prior = None
+    original = None
+    source = {"origin": "session"}
+    if source_plan:
+        source_path = regular(source_plan)
+        original = source_snapshot(source_path)
+        source = {"origin": "file", "path": str(source_path),
+                  "sha256": sha256(original).hexdigest()}
+    elif prior_package and (prior_package / ORIGINAL_PLAN).is_file():
+        original = source_snapshot(prior_package / ORIGINAL_PLAN)
+        prior_source = prior.get("source_plan", source)
+        if not isinstance(prior_source, dict) or prior_source.get("origin") not in ("file", "session"):
+            raise ValueError("Previous source plan metadata is invalid")
+        source = prior_source
+        if source.get("origin") == "file" and sha256(original).hexdigest() != source.get("sha256"):
+            raise ValueError("Previous original plan differs from its source snapshot")
     feature_root = safe(output / slug)
     if feature_root.exists():
         try:
@@ -216,12 +250,16 @@ def start(project, feature, max_phases=None, skills="", skills_mode="auto", comm
             continue
     else:
         raise ValueError("Could not allocate a unique package directory")
-    data = {"schema_version": 1, "owner": OWNER, "feature": feature, "status": "draft",
+    data = {"schema_version": 2, "owner": OWNER, "feature": feature, "status": "draft",
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "max_phases": max_phases, "skills": names, "skills_mode": skills_mode,
+            "max_phases": max_phases, "phase_count": phase_count,
+            "skills": names, "skills_mode": skills_mode,
             "commits": commits, "previous": str(prior_package) if prior_package else None,
-            "phases": {}, "skill_assignments": {}}
+            "phases": {}, "skill_assignments": {}, "source_plan": source}
     write_new(package / ".package.json", data)
+    if original is not None:
+        with (package / ORIGINAL_PLAN).open("xb") as stream:
+            stream.write(original)
     (package / "prompts").mkdir()
     return {"package": str(package), "git_exclusion_verified": is_git, "ignore_rule": rule}
 
@@ -235,18 +273,31 @@ def inspect(package):
                 errors.append(f"Output is not ignored: {path.relative_to(root)}")
         if checked_git(root, "ls-files", "--", package.parent.relative_to(root).as_posix()).strip():
             errors.append("Package output is tracked")
-    files = [package / name for name in SHARED]
-    for name, path in zip(SHARED, files):
+    required = SHARED + ((ORIGINAL_PLAN,) if data["schema_version"] == 2 else ())
+    files = [package / name for name in required]
+    for name, path in zip(required, files):
         if not regular(path).is_file():
             errors.append(f"Missing {name}")
         elif not path.read_text(encoding="utf-8").strip():
             errors.append(f"Empty {name}")
+    if data["schema_version"] == 2:
+        source = data.get("source_plan")
+        if not isinstance(source, dict) or source.get("origin") not in ("file", "session"):
+            errors.append("Invalid source plan metadata")
+        elif source["origin"] == "file":
+            expected = source.get("sha256")
+            if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+                errors.append("Invalid source plan checksum")
+            elif (package / ORIGINAL_PLAN).is_file() and sha256((package / ORIGINAL_PLAN).read_bytes()).hexdigest() != expected:
+                errors.append("Original plan differs from its source snapshot")
     phases = data.get("phases")
     if not isinstance(phases, dict) or not phases:
         errors.append("No phase prompt map")
     else:
         if data.get("max_phases") is not None and len(phases) > data["max_phases"]:
             errors.append("Phase count exceeds maximum")
+        if data["schema_version"] == 2 and data.get("phase_count") is not None and len(phases) != data["phase_count"]:
+            errors.append("Phase count differs from selected count")
         expected_ids = [f"P{index:02d}" for index in range(1, len(phases) + 1)]
         if list(phases) != expected_ids:
             errors.append("Phase IDs must be ordered and contiguous from P01")
@@ -275,7 +326,7 @@ def inspect(package):
             elif data.get("skills_mode") == "all" and set(assigned) != set(phases):
                 errors.append(f"Skill is missing from an all-mode prompt: {name}")
     for path in files:
-        if not path.is_file():
+        if not path.is_file() or path.name == ORIGINAL_PLAN:
             continue
         body = path.read_text(encoding="utf-8")
         for raw in MARKDOWN_LINK.findall(body):
@@ -330,10 +381,12 @@ def main(argv=None):
     command.add_argument("--project", required=True)
     command.add_argument("--feature", required=True)
     command.add_argument("--max-phases", type=int)
+    command.add_argument("--phase-count", type=int)
     command.add_argument("--skills", default="")
     command.add_argument("--skills-mode", choices=("auto", "all"), default="auto")
     command.add_argument("--commits", choices=("off", "scoped"), default="off")
     command.add_argument("--previous")
+    command.add_argument("--source-plan")
     command = commands.add_parser("list")
     command.add_argument("--project", required=True)
     for name in ("check", "status", "skills", "prompt"):
@@ -345,7 +398,8 @@ def main(argv=None):
     try:
         if args.action == "start":
             result = start(args.project, args.feature, args.max_phases, args.skills,
-                           args.skills_mode, args.commits, args.previous)
+                           args.skills_mode, args.commits, args.previous, args.source_plan,
+                           args.phase_count)
         elif args.action == "list":
             result = {"packages": list_packages(args.project)}
         else:

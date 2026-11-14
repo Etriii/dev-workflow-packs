@@ -13,7 +13,7 @@ Clarify scope and policy, inspect dependencies and preserve plan decisions befor
 | Skill | Purpose | Install pack |
 |---|---|---|
 | [blocker-check](packs/developer-skills/skills/blocker-check/README.md) | Find requirement, policy, dependency and environment blockers before implementation. | `developer-skills` |
-| [implementation-plan](packs/developer-skills/skills/implementation-plan/README.md) | Generate a complete ignored implementation package with phased prompts and skill assignments. | `developer-skills` |
+| [implementation-plan](packs/developer-skills/skills/implementation-plan/README.md) | Clarify a plan file or new task, then implement a bounded scope or prepare an ignored phased package. | `developer-skills` |
 | [plan-review](packs/developer-skills/skills/plan-review/README.md) | Review complete-plan coverage, dependencies and existing implementation before development. | `developer-skills` |
 | [prompt-intake](packs/developer-skills/skills/prompt-intake/README.md) | Clarify a task with recommended choices, custom answers, versioned question files and next-action hints. | `developer-skills` |
 | [version-manager](packs/developer-skills/skills/version-manager/README.md) | Plan and record a development-plan version transition while preserving accepted history. | `developer-skills` |

@@ -57,7 +57,7 @@ Read [SKILL_CATALOG.md](SKILL_CATALOG.md) for selection and [docs/SKILL_STANDARD
 | [deep-critique](skills/deep-critique/README.md) | Full generic critique and ratings by default, with optional focused modes. |
 | [delivery-readiness](skills/delivery-readiness/README.md) | Check configuration, tested artifacts, rollout sequencing and recovery before delivery. |
 | [environment-doctor](skills/environment-doctor/README.md) | Inspect local tool availability, Git state and required services with read-only diagnostics. |
-| [implementation-plan](skills/implementation-plan/README.md) | Generate complete phased implementation packages with selected skills and safe ignored storage. |
+| [implementation-plan](skills/implementation-plan/README.md) | Clarify an existing plan file or new task, then implement a bounded scope or prepare an ignored phase package. |
 | [investigate-first](skills/investigate-first/README.md) | Diagnose unclear failures before proposing code changes. |
 | [lean-build](skills/lean-build/README.md) | Implement a bounded feature through existing owners. |
 | [migration](skills/migration/README.md) | Make compatibility-sensitive transitions with preservation and recovery proof. |
@@ -81,7 +81,7 @@ Read [SKILL_CATALOG.md](SKILL_CATALOG.md) for selection and [docs/SKILL_STANDARD
 
 Invoke skills in agent chat with `$blocker-check` in Codex or `/blocker-check` in Claude Code, followed by the scope and relevant files. Refresh the agent session after installation. Reviews do not authorize implementation unless that skill's explicit scope and the user's instruction provide it.
 
-Use `$implementation-plan create "<feature>" --max-phases 5 --skills caveman,ultimate-ui-ux` to generate a package under the target project's ignored `.implementation-plans/` folder. The feature name and cap are examples; the cap and skills are optional. Read [its command guide](skills/implementation-plan/README.md) for revisions, stored prompts and checking. This new local skill needs a local-source install until published.
+Use `$implementation-plan "D:\My App\docs\plan.md" --skills caveman,ultimate-ui-ux` to start from an existing plan, or `create "<feature>"` without one. The skill asks for Compact, Balanced or Custom maximum phase sizing, then whether to implement, prepare the ignored package, or prepare it and implement the first phase. `--max-phases N` proposes a custom cap but still requires confirmation. Replace the example path and skill names with your actual inputs. Read [its command guide](skills/implementation-plan/README.md) for questions, revisions, stored prompts and checking.
 
 Use `$prompt-intake <task>` to inspect a prompt before starting dependent work. Each new intake saves `.prompt-intake/questions-v001.md` or the next version and gives a next-action hint. Answer material questions through an available native question tool or in the file, then reply `continue` to resume the active intake. Clear tasks are recorded and proceed directly; automatic matching is not a global prompt interception hook.
 

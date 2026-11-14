@@ -13,7 +13,7 @@ Public skills work without PhasePilot. Use these stages when the corresponding n
 | When | Skills | Expected result |
 |---|---|---|
 | The task needs clarification | `prompt-intake` | Versioned questions, recommendations, custom answers and a concrete next action. |
-| A complete implementation package is needed | `implementation-plan` | Requirements, contracts, acceptance, progress, handoff and separate phase prompts in ignored `.implementation-plans/`. |
+| A plan file or new task needs questions and an implementation choice | `implementation-plan` | Choose a phase count, then implement a bounded scope, prepare an ignored package, or prepare it and start the first phase. |
 | An implementation plan needs review | `plan-review`; optionally `critical-review` or `deep-critique` | Coverage, dependency findings and justified changes. Choose a short planning challenge or a broader assessment as needed. |
 | Decisions or technical risks remain | `blocker-check` and relevant engineering reviewers | Evidence-linked blockers and decisions before dependent implementation. |
 | Execution prerequisites need checking | `environment-doctor` | Available tools, services, Git state and explicit missing prerequisites. |
