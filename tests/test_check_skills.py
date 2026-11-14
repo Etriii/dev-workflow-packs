@@ -15,6 +15,14 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import check_skills
 
+UPDATE_COMMANDS = (
+    "```powershell\n"
+    "npx skills@1.7.4 update sample-review --project\n"
+    "npx skills@1.7.4 update sample-review --global\n"
+    "npx skills@1.7.4 add https://github.com/example/skills --skill sample-review --agent codex claude-code -g --copy\n"
+    "```\n"
+)
+
 
 class CheckSkillsTests(unittest.TestCase):
     def setUp(self):
@@ -32,8 +40,7 @@ class CheckSkillsTests(unittest.TestCase):
         (self.skill / "metadata.toml").write_text(
             metadata + '\nskill_id = "sample-review"\nprovenance = "local-authored"\n', encoding="utf-8")
         (self.skill / "README.md").write_text(
-            "# Sample\n\n[Instructions](SKILL.md)\n\n```powershell\n"
-            "npx skills@1.7.4 update sample-review --project\n```\n", encoding="utf-8")
+            "# Sample\n\n[Instructions](SKILL.md)\n\n" + UPDATE_COMMANDS, encoding="utf-8")
         self.manifest()
 
     def manifest(self):
@@ -65,16 +72,25 @@ class CheckSkillsTests(unittest.TestCase):
         (self.skill / "README.md").write_text("Changed without manifest update\n", encoding="utf-8")
         self.assertIn("checksum mismatch", self.failures()[0].detail)
 
-    def test_update_command_must_name_this_skill_and_project_scope(self):
+    def test_update_commands_must_name_this_skill_and_each_scope(self):
         path = self.skill / "README.md"
         original = path.read_text(encoding="utf-8")
-        for command in ("npx skills@1.7.4 update other-skill --project",
-                        "npx skills@1.7.4 update sample-review --global",
-                        "See the shared update guide."):
-            with self.subTest(command=command):
-                path.write_text(original.replace("npx skills@1.7.4 update sample-review --project", command), encoding="utf-8")
+        for scope in ("project", "global"):
+            expected = f"npx skills@1.7.4 update sample-review --{scope}"
+            for command in (f"npx skills@1.7.4 update other-skill --{scope}",
+                            "See the shared update guide."):
+                with self.subTest(scope=scope, command=command):
+                    path.write_text(original.replace(expected, command), encoding="utf-8")
+                    self.manifest()
+                    self.assertIn("missing project/global update or global copy command", self.failures()[0].detail)
+        copy_command = "npx skills@1.7.4 add https://github.com/example/skills --skill sample-review --agent codex claude-code -g --copy"
+        for command in ("See the shared update guide.",
+                        copy_command.replace("sample-review", "other-skill"),
+                        copy_command.replace("-g --copy", "--copy")):
+            with self.subTest(global_copy=command):
+                path.write_text(original.replace(copy_command, command), encoding="utf-8")
                 self.manifest()
-                self.assertIn("missing copyable npx project update command", self.failures()[0].detail)
+                self.assertIn("missing project/global update or global copy command", self.failures()[0].detail)
         path.write_text(original, encoding="utf-8")
         self.manifest()
 
@@ -105,7 +121,7 @@ class CheckSkillsTests(unittest.TestCase):
                              ("[Guide][usage]\n\n[usage]: <missing guide.md>", "missing guide.md"),
                              ("![Preview](missing.png)", "missing.png")):
             with self.subTest(target=target):
-                path.write_text(text + "\n```powershell\nnpx skills@1.7.4 update sample-review --project\n```\n", encoding="utf-8")
+                path.write_text(text + "\n" + UPDATE_COMMANDS, encoding="utf-8")
                 self.manifest()
                 failures = self.failures()
                 self.assertEqual(len(failures), 1)
@@ -119,7 +135,7 @@ class CheckSkillsTests(unittest.TestCase):
             "`[Inline example](also-not-a-file.md)`\n"
             "[Remote](https://example.invalid/unavailable)\n"
             "[Usage](../../../../usage%20guide.md#not-an-anchor-check)\n"
-            "```powershell\nnpx skills@1.7.4 update sample-review --project\n```\n", encoding="utf-8")
+            + UPDATE_COMMANDS, encoding="utf-8")
         self.manifest()
         self.assertFalse(self.failures())
 
@@ -137,8 +153,7 @@ class CheckSkillsTests(unittest.TestCase):
 
     def test_local_links_cannot_escape_the_collection(self):
         (self.skill / "README.md").write_text(
-            "[Outside](../../../../../outside.md)\n"
-            "```powershell\nnpx skills@1.7.4 update sample-review --project\n```\n", encoding="utf-8")
+            "[Outside](../../../../../outside.md)\n" + UPDATE_COMMANDS, encoding="utf-8")
         self.manifest()
         self.assertIn("out-of-tree", self.failures()[0].detail)
 

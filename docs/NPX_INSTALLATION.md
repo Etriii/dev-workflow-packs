@@ -158,7 +158,7 @@ For existing global installations, choose this alternative. PowerShell, from any
 npx skills@1.7.4 update --global
 ```
 
-That command updates all tracked global skills, including other sources. To select only one global skill:
+That command updates all tracked global skills, including other sources. A project-scoped command reports no match when the skill exists only globally. To select only one global skill:
 
 ```powershell
 npx skills@1.7.4 update system-settings --global
@@ -171,6 +171,14 @@ npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill system
 ```
 
 Replace the skill name and source with the original selection; use only `--agent codex` or `--agent claude-code` if that was the intended agent. Add `-g` only when refreshing an existing global copy. This fallback also applies to skipped local-path installs or older lock entries without enough tracking information. Refresh the local source first when reinstalling from a local folder. Do not switch a local or pinned source to the repository's default branch implicitly.
+
+For an existing global copy of `system-settings` installed from this published repository, PowerShell from any folder, retain both agents and copied destinations with this alternative:
+
+```powershell
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill system-settings --agent codex claude-code -g --copy
+```
+
+Use the original source/ref if the existing copy came from a different snapshot. The selected command refreshes only `system-settings`; inspect the CLI summary and installed files afterward.
 
 For Ultimate QA core/client, obtain a new complete snapshot in a separate durable folder using the [kit setup](#ultimate-qa-support-files). Set `ULTIMATE_QA_KIT` to its actual `packs/ultimate-qa` directory and rerun the selected `add` command from that same snapshot, preserving agents and scope. Keep the previous kit available until the refreshed copies and helper access are verified. Updating skill files alone does not update the retained templates/helpers.
 

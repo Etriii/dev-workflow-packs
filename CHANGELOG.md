@@ -2,6 +2,8 @@
 
 ## Unreleased collection 0.1.0
 
+- Add a copy-preserving global reinstall command to every skill update guide.
+- Show global and project update commands as separate alternatives in every skill README.
 - Add direct, scoped update commands to every skill README and require them for new skills in root agent and contribution instructions.
 - Use generic file, project and task placeholders in implementation-plan examples across its skill and command guides.
 - Add optional `--test-scope full` to implementation-plan packages and phase prompts, preserving focused tests by default and carrying the selected scope into revisions.

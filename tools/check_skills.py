@@ -88,13 +88,17 @@ def artifact_instructions(body: str) -> bool:
     return False
 
 
-def skill_update_command(body: str, name: str) -> bool:
-    """Require a directly copyable, project-scoped command for this skill."""
-    expected = f"npx skills@1.7.4 update {name} --project"
+def skill_update_commands(body: str, name: str) -> bool:
+    """Require scope-specific updates and a copy-preserving global alternative."""
+    commands = set()
     for block in re.findall(r"^```powershell\s*\n(.*?)^```", body, re.M | re.S | re.I):
-        if expected in (line.strip() for line in block.splitlines()):
-            return True
-    return False
+        commands.update(line.strip() for line in block.splitlines())
+    updates = all(f"npx skills@1.7.4 update {name} --{scope}" in commands
+                  for scope in ("project", "global"))
+    global_copy = any(command.startswith("npx skills@1.7.4 add ") and
+                      command.endswith(f" --skill {name} --agent codex claude-code -g --copy")
+                      for command in commands)
+    return updates and global_copy
 
 
 def check_collection(root: Path, selected: list[str] | None = None) -> list[Check]:
@@ -136,8 +140,8 @@ def check_collection(root: Path, selected: list[str] | None = None) -> list[Chec
             if not artifact_instructions(body):
                 raise ValueError(f"missing nonempty {POLICY_HEADING} declaration")
             readme = (skill / "README.md").read_text(encoding="utf-8")
-            if not skill_update_command(readme, name):
-                raise ValueError(f"README.md missing copyable npx project update command for {name}")
+            if not skill_update_commands(readme, name):
+                raise ValueError(f"README.md missing project/global update or global copy command for {name}")
             errors = []
             # Vendored upstream documentation retains its original link context.
             documents = [skill / "SKILL.md", skill / "README.md"]
@@ -150,7 +154,7 @@ def check_collection(root: Path, selected: list[str] | None = None) -> list[Chec
         except (OSError, ValueError) as error:
             checks.append(Check("FAIL", name, str(error)))
             continue
-        checks.append(Check("PASS", name, "structure, metadata, manifest, local file links, artifact declaration, update command"))
+        checks.append(Check("PASS", name, "structure, metadata, manifest, local file links, artifact declaration, update and global copy commands"))
         if not metadata.get("compatible_agents"):
             checks.append(Check("NOT VERIFIED", name, "native agent compatibility"))
     checks.append(Check("NOT VERIFIED", "behavior", "artifact declaration presence does not prove ignore rules, run safety, or agent adherence; run helper tests and agent trials separately"))

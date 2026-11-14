@@ -95,13 +95,31 @@ Update only `ultimate-qa` in that project:
 npx skills@1.7.4 update ultimate-qa --project
 ```
 
-Check the CLI result for updated, current, skipped or failed status; a skipped update is not success. Verify the intended installed file at the reported destination (for Codex project copies):
+For an existing **npx-managed global copy**, choose this alternative from any PowerShell folder. The project command cannot find a global copy:
+
+```powershell
+npx skills@1.7.4 update ultimate-qa --global
+```
+
+To retain copied Codex and Claude Code destinations, first obtain a new complete QA snapshot and set `ULTIMATE_QA_KIT` to that snapshot's durable `packs/ultimate-qa` folder as shown in Install. Then choose this selected global reinstall from any PowerShell folder instead of `update`; it refreshes the skill from the same snapshot as its kit:
+
+```powershell
+npx skills@1.7.4 add "$env:ULTIMATE_QA_KIT" --skill ultimate-qa --agent codex claude-code -g --copy
+```
+
+Check the CLI summary and installed destination. For `update`, look for updated, current, skipped or failed status; a skipped update is not success. Verify the intended installed file at the reported destination (for Codex project copies):
 
 ```powershell
 Test-Path '.agents/skills/ultimate-qa/SKILL.md'
 ```
 
-For Claude Code project copies, check `.claude/skills/ultimate-qa/SKILL.md`. Refresh the agent session before invoking the skill in chat. The updater does not forward explicit `--agent` or `--copy`; to retain those choices, rerun the selected `add` command in the Install section with the original source and scope. Python-managed copies use the [recorded replacement workflow](../../../../INSTALL.md#existing-copies-and-replacement), not this npx command. See [global scope, source and removal details](../../../../docs/NPX_INSTALLATION.md#updates-and-removal).
+For a Codex global copy, verify from any PowerShell folder:
+
+```powershell
+Test-Path (Join-Path $env:USERPROFILE '.agents/skills/ultimate-qa/SKILL.md')
+```
+
+For Claude Code, check `.claude/skills/ultimate-qa/SKILL.md` in the project or beneath `$env:USERPROFILE` for a global copy. Refresh the agent session before invoking the skill in chat. The updater does not forward explicit `--agent` or `--copy`. For copied global destinations use the selected `add` command above; for a project copy, repeat the matching `add` command in Install with its original source and scope. Python-managed copies use the [recorded replacement workflow](../../../../INSTALL.md#existing-copies-and-replacement), not this npx command. See [global scope, source and removal details](../../../../docs/NPX_INSTALLATION.md#updates-and-removal).
 
 These core/client skills also need a matching durable QA kit. Obtain a new complete snapshot, set `ULTIMATE_QA_KIT` to its actual `packs/ultimate-qa` directory, and rerun the selected `add` command in the Install section, pointing it to that same new snapshot. Keep the previous kit until the new skill copy and helper access are verified. [QA kit update steps](../../../../docs/NPX_INSTALLATION.md#update-npx-managed-skills).
 

@@ -76,13 +76,31 @@ Update only `ultimate-qa-security` in that project:
 npx skills@1.7.4 update ultimate-qa-security --project
 ```
 
-Check the CLI result for updated, current, skipped or failed status; a skipped update is not success. Verify the intended installed file at the reported destination (for Codex project copies):
+For an existing **npx-managed global copy**, choose this alternative from any PowerShell folder. The project command cannot find a global copy:
+
+```powershell
+npx skills@1.7.4 update ultimate-qa-security --global
+```
+
+To retain copied Codex and Claude Code destinations, choose this selected global reinstall from any PowerShell folder instead of `update`. It uses the published repository's default branch; if the existing copy came from a local or pinned source, use that original source/ref instead:
+
+```powershell
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill ultimate-qa-security --agent codex claude-code -g --copy
+```
+
+Check the CLI summary and installed destination. For `update`, look for updated, current, skipped or failed status; a skipped update is not success. Verify the intended installed file at the reported destination (for Codex project copies):
 
 ```powershell
 Test-Path '.agents/skills/ultimate-qa-security/SKILL.md'
 ```
 
-For Claude Code project copies, check `.claude/skills/ultimate-qa-security/SKILL.md`. Refresh the agent session before invoking the skill in chat. The updater does not forward explicit `--agent` or `--copy`; to retain those choices, rerun the selected `add` command in the Install section with the original source and scope. Python-managed copies use the [recorded replacement workflow](../../../../INSTALL.md#existing-copies-and-replacement), not this npx command. See [global scope, source and removal details](../../../../docs/NPX_INSTALLATION.md#updates-and-removal).
+For a Codex global copy, verify from any PowerShell folder:
+
+```powershell
+Test-Path (Join-Path $env:USERPROFILE '.agents/skills/ultimate-qa-security/SKILL.md')
+```
+
+For Claude Code, check `.claude/skills/ultimate-qa-security/SKILL.md` in the project or beneath `$env:USERPROFILE` for a global copy. Refresh the agent session before invoking the skill in chat. The updater does not forward explicit `--agent` or `--copy`. For copied global destinations use the selected `add` command above; for a project copy, repeat the matching `add` command in Install with its original source and scope. Python-managed copies use the [recorded replacement workflow](../../../../INSTALL.md#existing-copies-and-replacement), not this npx command. See [global scope, source and removal details](../../../../docs/NPX_INSTALLATION.md#updates-and-removal).
 
 ## Use
 
