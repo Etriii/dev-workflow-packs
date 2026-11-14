@@ -50,6 +50,8 @@ You can combine this skill with Codex or Claude's built-in Plan mode: finish its
 
 Every saved package has `ORIGINAL_PLAN.md`, `README.md`, `PLAN.md`, `CONTRACTS.md`, `PHASES.md`, `PROMPTS.md`, `RUNBOOK.md`, `ACCEPTANCE.md`, `PROGRESS.md`, `HANDOFF.md`, `BLOCKERS.md`, `COMMIT_MESSAGES.md`, and a separate file under `prompts/` for each phase. A supplied Markdown plan is copied byte for byte into `ORIGINAL_PLAN.md`; answers go in `PLAN.md`. For PDF input, the original PDF is copied byte for byte into `SOURCE_DOCUMENT.pdf` and the agreed working plan goes into `ORIGINAL_PLAN.md`. Without a file, the agreed session plan becomes `ORIGINAL_PLAN.md`. Initially, unexecuted checks remain `NOT_RUN`.
 
+`COMMIT_MESSAGES.md` must contain detailed, copyable messages for the planned work, split by repository and distinct feature. Each message has a Conventional Commit subject and a substantive body explaining the intended behavior, why it matters, planned changes, and relevant verification or migration notes. At planning time, label unrun checks `NOT_RUN` and avoid invented file paths or hashes. When implementation happens, update messages from the actual diff and checks. A list of one-line subjects is incomplete. This requirement applies with both `--commits off` and `--commits scoped`; the option controls whether the selected implementation may make local commits. Terse chat styles do not shorten persisted commit messages.
+
 ## Commands and options
 
 The examples below are independent chat requests. Use the exact path returned by `create` or `revise` in place of `<package>`.
@@ -75,7 +77,7 @@ $implementation-plan help
 
 Package choices save under `<project-root>/.implementation-plans/<feature>-implementation/<UTC-run-id>/`. Each revision has a unique run directory. The skill adds `/.implementation-plans/` to the root `.gitignore` when needed and verifies exclusion before saving. It leaves existing `docs/` content untouched. Earlier packages under `docs/` remain readable; revisions of them use the new root and link back to the old path without moving it. Tracked output is refused without automatic untracking. In a non-Git project exclusion is unverified. Resume an identified draft revision after interruption; never overwrite or discard an earlier one. A failed storage check stops saving and reports the exact reason.
 
-`check` confirms the package structure and requires a separate author review of requirement coverage, dependencies, links, prompt scope and evidence claims. A passing check does not prove implementation, native agent adherence or runtime behavior. With Prepare phase package, invoke the exact stored prompt from `prompt <package> P01` in a later request when work on that phase is intended; it stops at that phase.
+`check` confirms the package structure and rejects subject-only commit lists or commit blocks without bodies. The author must still review whether each body covers its repository and logical feature in useful detail, along with requirement coverage, dependencies, links, prompt scope and evidence claims. A passing check does not prove implementation, native agent adherence or runtime behavior. With Prepare phase package, invoke the exact stored prompt from `prompt <package> P01` in a later request when work on that phase is intended; it stops at that phase.
 
 ## Install
 

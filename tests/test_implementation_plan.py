@@ -35,6 +35,14 @@ class PackageStoreTests(unittest.TestCase):
     def save_complete(self, package):
         for name in store.SHARED:
             (package / name).write_text(f"# {name}\n", encoding="utf-8")
+        (package / "COMMIT_MESSAGES.md").write_text(
+            "# Draft messages\n\nRepository: application\n\n```text\n"
+            "feat(requests): record approval decisions\n\n"
+            "Preserve the final signer's decision so request history remains auditable.\n\n"
+            "- Store the signer and decision time with the request.\n"
+            "- Verify approval and rejection paths after implementation; NOT_RUN.\n"
+            "```\n", encoding="utf-8"
+        )
         if not (package / store.ORIGINAL_PLAN).exists():
             (package / store.ORIGINAL_PLAN).write_text("# Session plan\n", encoding="utf-8")
         (package / "prompts" / "P01_BUILD.md").write_text("Implement P01 only.\n", encoding="utf-8")
@@ -264,6 +272,21 @@ class PackageStoreTests(unittest.TestCase):
         data["phases"]["P02"] = "P02_EXTRA.md"
         (package / ".package.json").write_text(json.dumps(data))
         self.assertIn("Phase count exceeds maximum", store.inspect(package)["errors"])
+
+    def test_subject_only_commit_drafts_fail_package_check(self):
+        package = Path(store.start(self.root, "Requests", commits="off")["package"])
+        self.save_complete(package)
+        messages = package / "COMMIT_MESSAGES.md"
+        messages.write_text(
+            "# Draft commit subjects\n\n- P01: feat: add approval history\n",
+            encoding="utf-8",
+        )
+        self.assertTrue(any("subject-only lists" in error for error in store.inspect(package)["errors"]))
+        messages.write_text(
+            "# Draft messages\n\n```text\nfeat(requests): add approval history\n```\n",
+            encoding="utf-8",
+        )
+        self.assertTrue(any("needs a body" in error for error in store.inspect(package)["errors"]))
 
     def test_selected_phase_count_is_exact_and_respects_cap(self):
         self.init_git()

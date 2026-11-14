@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Require detailed, repository-specific implementation-plan commit drafts with explanatory bodies even when commit execution is off; reject subject-only packages in the checker.
 - Add a copy-preserving global reinstall command to every skill update guide.
 - Show global and project update commands as separate alternatives in every skill README.
 - Add direct, scoped update commands to every skill README and require them for new skills in root agent and contribution instructions.

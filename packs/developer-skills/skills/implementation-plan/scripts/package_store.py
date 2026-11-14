@@ -28,6 +28,8 @@ SOURCE_DOCUMENT = "SOURCE_DOCUMENT.pdf"
 PHASE_ID = re.compile(r"P\d{2,}")
 RUN_ID = re.compile(r"\d{8}T\d{6}Z-[0-9a-f]{12}")
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
+COMMIT_BLOCK = re.compile(r"^```(?:text|commit)?[ \t]*\r?\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
+COMMIT_SUBJECT = re.compile(r"^(?:feat|fix|refactor|chore|docs|test|perf|ci)(?:\([^)\r\n]+\))?!?: [^\r\n]+$")
 
 
 def safe(path):
@@ -317,6 +319,16 @@ def inspect(package):
             errors.append(f"Missing {name}")
         elif not path.read_text(encoding="utf-8").strip():
             errors.append(f"Empty {name}")
+    messages = regular(package / "COMMIT_MESSAGES.md")
+    if messages.is_file():
+        blocks = [block.replace("\r\n", "\n").strip() for block in COMMIT_BLOCK.findall(messages.read_text(encoding="utf-8"))]
+        drafts = [block for block in blocks if block and COMMIT_SUBJECT.fullmatch(block.splitlines()[0])]
+        if not drafts:
+            errors.append("COMMIT_MESSAGES.md needs copyable Conventional Commit blocks with detailed bodies; subject-only lists are incomplete")
+        for draft in drafts:
+            subject, _, body = draft.partition("\n\n")
+            if not body.strip():
+                errors.append(f"Commit message needs a body: {subject}")
     if data["schema_version"] == 2:
         source = data.get("source_plan")
         if not isinstance(source, dict) or source.get("origin") not in ("file", "session"):
