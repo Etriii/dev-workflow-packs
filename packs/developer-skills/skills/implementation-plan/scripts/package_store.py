@@ -24,6 +24,7 @@ SHARED = (
     "BLOCKERS.md", "COMMIT_MESSAGES.md",
 )
 ORIGINAL_PLAN = "ORIGINAL_PLAN.md"
+SOURCE_DOCUMENT = "SOURCE_DOCUMENT.pdf"
 PHASE_ID = re.compile(r"P\d{2,}")
 RUN_ID = re.compile(r"\d{8}T\d{6}Z-[0-9a-f]{12}")
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
@@ -177,8 +178,21 @@ def source_snapshot(path):
     return content
 
 
-def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits="off", previous=None, source_plan=None, phase_count=None):
-    names = validate_options(max_phases, skills, skills_mode, commits, phase_count)
+def pdf_snapshot(path):
+    source = regular(path)
+    if not source.is_file():
+        raise ValueError(f"Source PDF does not exist: {source}")
+    if source.suffix.lower() != ".pdf":
+        raise ValueError("Source document must be a PDF file")
+    content = source.read_bytes()
+    if b"%PDF-" not in content[:1024]:
+        raise ValueError("Source document is not a PDF")
+    return content
+
+
+def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits="off", previous=None, source_plan=None, phase_count=None, source_document=None):
+    if source_plan and source_document:
+        raise ValueError("Choose one source plan or source PDF")
     root, is_git = project_root(project)
     output = safe(root / OUTPUT)
     store_marker = output / ".implementation-plan-store.json"
@@ -202,21 +216,36 @@ def start(project, feature, max_phases=None, skills="", skills_mode="auto", comm
         slug = slugify(feature) + "-implementation"
         prior_package = None
         prior = None
+    names = validate_options(max_phases, skills, skills_mode, commits, phase_count)
     original = None
     source = {"origin": "session"}
+    document = None
+    document_bytes = None
     if source_plan:
         source_path = regular(source_plan)
         original = source_snapshot(source_path)
         source = {"origin": "file", "path": str(source_path),
                   "sha256": sha256(original).hexdigest()}
-    elif prior_package and (prior_package / ORIGINAL_PLAN).is_file():
-        original = source_snapshot(prior_package / ORIGINAL_PLAN)
-        prior_source = prior.get("source_plan", source)
-        if not isinstance(prior_source, dict) or prior_source.get("origin") not in ("file", "session"):
-            raise ValueError("Previous source plan metadata is invalid")
-        source = prior_source
-        if source.get("origin") == "file" and sha256(original).hexdigest() != source.get("sha256"):
-            raise ValueError("Previous original plan differs from its source snapshot")
+    elif source_document:
+        source_path = regular(source_document)
+        document_bytes = pdf_snapshot(source_path)
+        document = {"path": str(source_path), "sha256": sha256(document_bytes).hexdigest()}
+    elif prior_package:
+        if (prior_package / ORIGINAL_PLAN).is_file():
+            original = source_snapshot(prior_package / ORIGINAL_PLAN)
+            prior_source = prior.get("source_plan", source)
+            if not isinstance(prior_source, dict) or prior_source.get("origin") not in ("file", "session"):
+                raise ValueError("Previous source plan metadata is invalid")
+            source = prior_source
+            if source.get("origin") == "file" and sha256(original).hexdigest() != source.get("sha256"):
+                raise ValueError("Previous original plan differs from its source snapshot")
+        if prior.get("source_document") is not None:
+            document = prior["source_document"]
+            if not isinstance(document, dict) or not isinstance(document.get("sha256"), str):
+                raise ValueError("Previous source PDF metadata is invalid")
+            document_bytes = pdf_snapshot(prior_package / SOURCE_DOCUMENT)
+            if sha256(document_bytes).hexdigest() != document["sha256"]:
+                raise ValueError("Previous source PDF differs from its snapshot")
     feature_root = safe(output / slug)
     if feature_root.exists():
         try:
@@ -255,11 +284,15 @@ def start(project, feature, max_phases=None, skills="", skills_mode="auto", comm
             "max_phases": max_phases, "phase_count": phase_count,
             "skills": names, "skills_mode": skills_mode,
             "commits": commits, "previous": str(prior_package) if prior_package else None,
-            "phases": {}, "skill_assignments": {}, "source_plan": source}
+            "phases": {}, "skill_assignments": {}, "source_plan": source,
+            "source_document": document}
     write_new(package / ".package.json", data)
     if original is not None:
         with (package / ORIGINAL_PLAN).open("xb") as stream:
             stream.write(original)
+    if document_bytes is not None:
+        with (package / SOURCE_DOCUMENT).open("xb") as stream:
+            stream.write(document_bytes)
     (package / "prompts").mkdir()
     return {"package": str(package), "git_exclusion_verified": is_git, "ignore_rule": rule}
 
@@ -290,6 +323,17 @@ def inspect(package):
                 errors.append("Invalid source plan checksum")
             elif (package / ORIGINAL_PLAN).is_file() and sha256((package / ORIGINAL_PLAN).read_bytes()).hexdigest() != expected:
                 errors.append("Original plan differs from its source snapshot")
+        document = data.get("source_document")
+        if document is not None:
+            expected = document.get("sha256") if isinstance(document, dict) else None
+            if not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected):
+                errors.append("Invalid source PDF checksum")
+            else:
+                snapshot = regular(package / SOURCE_DOCUMENT)
+                if not snapshot.is_file():
+                    errors.append(f"Missing {SOURCE_DOCUMENT}")
+                elif sha256(snapshot.read_bytes()).hexdigest() != expected:
+                    errors.append("Source PDF differs from its snapshot")
     phases = data.get("phases")
     if not isinstance(phases, dict) or not phases:
         errors.append("No phase prompt map")
@@ -387,6 +431,7 @@ def main(argv=None):
     command.add_argument("--commits", choices=("off", "scoped"), default="off")
     command.add_argument("--previous")
     command.add_argument("--source-plan")
+    command.add_argument("--source-document")
     command = commands.add_parser("list")
     command.add_argument("--project", required=True)
     for name in ("check", "status", "skills", "prompt"):
@@ -399,7 +444,7 @@ def main(argv=None):
         if args.action == "start":
             result = start(args.project, args.feature, args.max_phases, args.skills,
                            args.skills_mode, args.commits, args.previous, args.source_plan,
-                           args.phase_count)
+                           args.phase_count, args.source_document)
         elif args.action == "list":
             result = {"packages": list_packages(args.project)}
         else:

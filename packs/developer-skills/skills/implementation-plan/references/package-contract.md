@@ -4,7 +4,8 @@ The package records a plan, not completed work. Make every file specific to the 
 
 | File | Owns |
 |---|---|
-| `ORIGINAL_PLAN.md` | Unchanged snapshot of a supplied plan, or the agreed session plan when no file was supplied. Preserve source wording; record later clarifications in `PLAN.md`. |
+| `ORIGINAL_PLAN.md` | Unchanged snapshot of a supplied Markdown plan, or the agreed working plan when the input was a PDF or chat task. Record later clarifications in `PLAN.md`. |
+| `SOURCE_DOCUMENT.pdf` | Exact, checksummed copy of a supplied PDF, when present. It remains the original evidence even if the working plan is revised. |
 | `README.md` | Purpose, how to use one phase prompt, file ownership and repository boundaries. |
 | `PLAN.md` | Goal, approved decisions, exclusions, current source evidence and requirement-to-phase coverage. |
 | `CONTRACTS.md` | Shared business, API, data, permission and failure invariants that phases must preserve. |
@@ -19,7 +20,7 @@ The package records a plan, not completed work. Make every file specific to the 
 
 The phase list must match the user's confirmed exact count; an optional maximum remains a separate cap. Each phase prompt names only its phase, project path and package path, prerequisites, relevant source and package sections, deliverables, acceptance checks, tracking updates and stop condition. Keep the prompt self-contained enough to start in a fresh session while linking shared detail rather than duplicating whole specifications. Use descriptive user-facing objectives; retain phase IDs only where technically needed.
 
-Record the source evidence used during planning and its limits. Do not edit `ORIGINAL_PLAN.md` to incorporate answers; keep the source file's original bytes when one was supplied. The store checks its snapshot hash. A plan created from chat is recorded there before deriving the package documents. Unrun tests are `NOT_RUN`; later requirements are `DUE_LATER` only with their owner phase. Completion requires actual implementation and required proof, not a checked box, generated prompt, or prepared commit message. A revision links to its predecessor, retains valid results and marks invalidated evidence for recheck.
+Record the source evidence used during planning and its limits. Keep a supplied Markdown plan's original bytes in `ORIGINAL_PLAN.md` and put later answers in `PLAN.md`. For PDF input, keep the original PDF in `SOURCE_DOCUMENT.pdf` and write the agreed working plan in `ORIGINAL_PLAN.md`; do not present the latter as a byte-for-byte PDF copy. The store checks supplied-file snapshot hashes. A plan created from chat is recorded before deriving the package documents. Unrun tests are `NOT_RUN`; later requirements are `DUE_LATER` only with their owner phase. Completion requires actual implementation and required proof, not a checked box, generated prompt, or prepared commit message. A revision links to its predecessor, retains valid results and marks invalidated evidence for recheck.
 
 If a selected skill is unavailable, list its exact name, affected prompts and installation prerequisite. The output still may be saved as a draft; do not label affected prompts ready. In `all` mode, every prompt includes all selected skills, but their instructions remain limited by selected-phase scope and repository policy. Detect scope or workflow conflicts before saying a prompt is ready.
 

@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Start from an existing Codex or Claude plan file, or describe a task without one. The skill asks planning questions, recommends compact and balanced phase counts, and lets you implement, save a complete phase package, or save it and begin the first phase. A saved package contains shared specifications, separate one-phase prompts, acceptance checks, progress and handoff.
+Start from an existing Codex or Claude Markdown plan, a PDF requirements brief with no plan yet, or a task described in chat. The skill asks planning questions, recommends compact and balanced phase counts, and lets you implement, save a complete phase package, or save it and begin the first phase. A saved package contains shared specifications, separate one-phase prompts, acceptance checks, progress and handoff.
 
 ## Start in agent chat
 
@@ -12,7 +12,15 @@ $implementation-plan "D:\My App\docs\hiring-plan.md" --skills caveman,ultimate-u
 
 In Claude Code, replace `$implementation-plan` with `/implementation-plan`. To start without a file, use `$implementation-plan create "Hiring and workforce management"` or invoke it bare and provide the task when asked. A plain non-path task remains a `create` shortcut. A missing path-like argument is reported as a missing file. Use `--project "D:\My App"` if the target project is not the open one; the plan file may be outside that project.
 
-You may put `--skills` before the plan path if that reads more naturally. This is an alternative chat request:
+If you have instructions or requirements in a PDF but no plan yet, give its path and the existing application project. Replace both example paths:
+
+```text
+$implementation-plan "D:\Requirements\programmer-instructions.pdf" --project "D:\My App"
+```
+
+The skill reads the PDF as source requirements, checks unclear or conflicting details, asks questions, and forms a working plan from the answers. If the PDF already contains a plan, it can use that plan instead. It will not treat a requirements brief as an approved implementation plan.
+
+You may put options before the plan path if that reads more naturally. This is an alternative chat request:
 
 ```text
 $implementation-plan --skills migration,verify-and-stop --max-phases 4 "D:\My App\docs\hiring-plan.md"
@@ -40,7 +48,7 @@ Other questions concern only decisions the plan and source cannot settle, such a
 
 You can combine this skill with Codex or Claude's built-in Plan mode: finish its questions and use the agreed plan as this skill's input, either in the same conversation or as a saved file. This skill's three choices are its own question; it does not change the host's built-in menu. While the host remains in read-only Plan mode, the skill can ask and plan but waits for execution mode before saving files or implementing.
 
-Every saved package has `ORIGINAL_PLAN.md`, `README.md`, `PLAN.md`, `CONTRACTS.md`, `PHASES.md`, `PROMPTS.md`, `RUNBOOK.md`, `ACCEPTANCE.md`, `PROGRESS.md`, `HANDOFF.md`, `BLOCKERS.md`, `COMMIT_MESSAGES.md`, and a separate file under `prompts/` for each phase. A supplied plan is copied byte for byte into `ORIGINAL_PLAN.md`; answers go in `PLAN.md`. Without a file, the agreed session plan becomes `ORIGINAL_PLAN.md`. Initially, unexecuted checks remain `NOT_RUN`.
+Every saved package has `ORIGINAL_PLAN.md`, `README.md`, `PLAN.md`, `CONTRACTS.md`, `PHASES.md`, `PROMPTS.md`, `RUNBOOK.md`, `ACCEPTANCE.md`, `PROGRESS.md`, `HANDOFF.md`, `BLOCKERS.md`, `COMMIT_MESSAGES.md`, and a separate file under `prompts/` for each phase. A supplied Markdown plan is copied byte for byte into `ORIGINAL_PLAN.md`; answers go in `PLAN.md`. For PDF input, the original PDF is copied byte for byte into `SOURCE_DOCUMENT.pdf` and the agreed working plan goes into `ORIGINAL_PLAN.md`. Without a file, the agreed session plan becomes `ORIGINAL_PLAN.md`. Initially, unexecuted checks remain `NOT_RUN`.
 
 ## Commands and options
 
@@ -71,7 +79,7 @@ Package choices save under `<project-root>/.implementation-plans/<feature>-imple
 
 ### Direct npx installation
 
-Prerequisites: Node.js 22.20+ with npm/npx, network access for npm/GitHub, and Git for repository fallback. These are installer requirements. At runtime, this skill's bundled helper needs Python 3.11+ and Git for exclusion verification inside a Git project; the target application has its own requirements.
+Prerequisites: Node.js 22.20+ with npm/npx, network access for npm/GitHub, and Git for repository fallback. These are installer requirements. At runtime, this skill's bundled helper needs Python 3.11+ and Git for exclusion verification inside a Git project; the target application has its own requirements. PDF input also needs a PDF reader available to the agent for content inspection. The helper only validates and copies PDF bytes; it does not extract text or perform OCR. If the document cannot be read reliably, provide an accessible text copy before planning.
 
 PowerShell, starting in the target application folder; replace `D:\My App` with your project path. Run the lines separately:
 

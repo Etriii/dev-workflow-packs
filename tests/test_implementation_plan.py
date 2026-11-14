@@ -118,6 +118,48 @@ class PackageStoreTests(unittest.TestCase):
         self.assertFalse((self.root / store.OUTPUT).exists())
         self.assertFalse((self.root / ".gitignore").exists())
 
+    def test_pdf_requirements_are_preserved_with_a_session_plan(self):
+        self.init_git()
+        source = self.root / "programmer-instructions.pdf"
+        original = b"%PDF-1.4\nsource requirements\n%%EOF\n"
+        source.write_bytes(original)
+        package = Path(store.start(self.root, "System Fixes", source_document=source)["package"])
+        self.assertEqual((package / store.SOURCE_DOCUMENT).read_bytes(), original)
+        self.assertIn("Missing ORIGINAL_PLAN.md", store.inspect(package)["errors"])
+        self.save_complete(package)
+        self.assertEqual(store.inspect(package)["errors"], [])
+        revised = Path(store.start(self.root, "Ignored title", previous=package)["package"])
+        self.assertEqual((revised / store.SOURCE_DOCUMENT).read_bytes(), original)
+        self.assertEqual((revised / store.ORIGINAL_PLAN).read_bytes(),
+                         (package / store.ORIGINAL_PLAN).read_bytes())
+        (package / store.SOURCE_DOCUMENT).write_bytes(b"%PDF-1.4\nchanged\n")
+        self.assertIn("Source PDF differs from its snapshot", store.inspect(package)["errors"])
+        with self.assertRaisesRegex(ValueError, "Previous source PDF differs"):
+            store.start(self.root, "Ignored title", previous=package)
+
+    def test_invalid_pdf_or_conflicting_sources_do_not_create_output(self):
+        self.init_git()
+        source = self.root / "instructions.pdf"
+        source.write_bytes(b"not a PDF")
+        with self.assertRaisesRegex(ValueError, "not a PDF"):
+            store.start(self.root, "System Fixes", source_document=source)
+        with self.assertRaisesRegex(ValueError, "Choose one source"):
+            store.start(self.root, "System Fixes", source_plan=source,
+                        source_document=source)
+        self.assertFalse((self.root / store.OUTPUT).exists())
+        self.assertFalse((self.root / ".gitignore").exists())
+
+    def test_cli_accepts_pdf_source(self):
+        source = self.root / "instructions.pdf"
+        source.write_bytes(b"%PDF-1.4\n%%EOF\n")
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(store.main(["start", "--project", str(self.root),
+                                         "--feature", "System Fixes", "--source-document",
+                                         str(source)]), 0)
+        package = Path(json.loads(output.getvalue())["package"])
+        self.assertEqual((package / store.SOURCE_DOCUMENT).read_bytes(), source.read_bytes())
+
     def test_legacy_package_remains_readable_without_original_plan(self):
         package = Path(store.start(self.root, "Hiring")["package"])
         self.save_complete(package)
