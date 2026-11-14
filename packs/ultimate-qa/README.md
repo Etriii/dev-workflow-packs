@@ -20,13 +20,13 @@ Keep a complete matching kit available for core/client execution. External insta
 Use curl to download the complete kit ZIP, then npx to install from that same snapshot. A manual Git clone is optional. PowerShell, from any folder; replace `D:\My App` with your existing application and choose a new durable kit folder. Skip acquisition if you already have a matching kit and use its actual path.
 
 ```powershell
-$qaKitFolder = 'D:\Tools\agent-skills-qa'
+$qaKitFolder = 'D:\Tools\dev-workflow-packs-qa'
 if (Test-Path -LiteralPath $qaKitFolder) { throw 'Reuse the existing QA kit, or choose a new kit folder.' }
 New-Item -ItemType Directory -Path $qaKitFolder -ErrorAction Stop | Out-Null
-curl.exe --fail --location --output "$qaKitFolder\agent-skills-main.zip" 'https://github.com/Etriii/agent-skills/archive/refs/heads/main.zip'
+curl.exe --fail --location --output "$qaKitFolder\dev-workflow-packs-main.zip" 'https://github.com/Etriii/dev-workflow-packs/archive/refs/heads/main.zip'
 if ($LASTEXITCODE -ne 0) { throw 'QA kit download failed.' }
-Expand-Archive -LiteralPath "$qaKitFolder\agent-skills-main.zip" -DestinationPath $qaKitFolder -ErrorAction Stop
-$env:ULTIMATE_QA_KIT = Join-Path $qaKitFolder 'agent-skills-main\packs\ultimate-qa'
+Expand-Archive -LiteralPath "$qaKitFolder\dev-workflow-packs-main.zip" -DestinationPath $qaKitFolder -ErrorAction Stop
+$env:ULTIMATE_QA_KIT = Join-Path $qaKitFolder 'dev-workflow-packs-main\packs\ultimate-qa'
 Set-Location 'D:\My App'
 npx skills@1.7.4 add "$env:ULTIMATE_QA_KIT" --skill '*' --agent codex claude-code --copy
 ```
@@ -38,7 +38,7 @@ This selects all nine QA skills for both agents in the application. For only cor
 For a standalone specialist that does not need core/client state, use the ordinary direct remote route from the application folder, for example:
 
 ```powershell
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills --skill ultimate-qa-architecture --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill ultimate-qa-architecture --agent codex claude-code --copy
 ```
 
 Its runtime prerequisites remain in the skill README. Installing instructions does not start a QA review.

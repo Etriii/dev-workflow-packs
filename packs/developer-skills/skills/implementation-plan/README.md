@@ -48,13 +48,13 @@ PowerShell, starting in the target application folder; replace `D:\My App` with 
 
 ```powershell
 Set-Location 'D:\My App'
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills --skill implementation-plan --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill implementation-plan --agent codex claude-code --copy
 ```
 
 This is project scope for Codex and Claude Code. For one agent, use `--agent codex` or `--agent claude-code`. Review the CLI's destination summary; expected copies include `.agents/skills/implementation-plan/SKILL.md`, its `scripts/` and `references/`, and the corresponding Claude skill location when selected. Refresh the agent session, then invoke the skill separately in chat. The remote command reads published files. Until this new skill is published, use the actual local collection root as the npx source:
 
 ```powershell
-npx skills@1.7.4 add 'D:\ACollectionOfDevelopedSystems\ActiveDevelopment\agent-skills' --skill implementation-plan --agent codex claude-code --copy
+npx skills@1.7.4 add 'D:\ACollectionOfDevelopedSystems\ActiveDevelopment\dev-workflow-packs' --skill implementation-plan --agent codex claude-code --copy
 ```
 
 This local-source command also starts from the target application folder. It installs the current local checkout, not a remote snapshot. A missing remote skill name means it has not been published there; do not silently switch sources. See the [npx guide](../../../../docs/NPX_INSTALLATION.md) for updates and removal. Use the installer that owns an existing copy.

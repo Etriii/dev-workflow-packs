@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Rename the collection to Dev Workflow Packs, refresh installation and update examples for the new GitHub path, and name new ZIP snapshots `dev-workflow-packs-<version>.zip`; retain existing Python installation history paths and skill names.
 - Add implementation-plan for source-grounded phased packages, skill routing, scoped commit options and safe ignored revisions under `.implementation-plans/`.
 - Make all four UI/UX entrypoints artifact-free by default: improve, verify and report briefly in chat without run files, saved captures, logs or ignore-file edits. Keep saved reports, previews and resumable evidence opt-in; preserve compatibility and existing saved-run gates.
 - Make scoped UI/UX inspection, justified improvements and verification the default, with optional formal review and feature-based previews. Document explicit improve-all, absolute application/page paths, relative paths and URLs; preserve existing command options and saved approval checkpoints.

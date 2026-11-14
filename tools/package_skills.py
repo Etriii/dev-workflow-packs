@@ -41,11 +41,11 @@ def build(root: Path, output: Path) -> tuple[Path, str]:
     payloads = distribution_files(root)
     payloads["SNAPSHOT_SHA256SUMS"] = "".join(f"{sha256(data).hexdigest()}  {name}\n" for name, data in payloads.items()).encode()
     output.mkdir(parents=True, exist_ok=True)
-    archive = safe_path(output / f"agent-skills-{version}.zip")
-    pending = safe_path(output / f"agent-skills-{version}.zip.tmp")
+    archive = safe_path(output / f"dev-workflow-packs-{version}.zip")
+    pending = safe_path(output / f"dev-workflow-packs-{version}.zip.tmp")
     with ZipFile(pending, "w", compression=ZIP_DEFLATED) as zipped:
         for name, data in sorted(payloads.items()):
-            entry = ZipInfo(f"agent-skills/{name}", date_time=(1980, 1, 1, 0, 0, 0))
+            entry = ZipInfo(f"dev-workflow-packs/{name}", date_time=(1980, 1, 1, 0, 0, 0))
             entry.compress_type = ZIP_DEFLATED
             entry.external_attr = 0o100644 << 16
             zipped.writestr(entry, data)

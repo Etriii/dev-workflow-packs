@@ -17,7 +17,7 @@ Replace `D:\My App` with your existing target project. Run each line separately:
 
 ```powershell
 Set-Location 'D:\My App'
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills --skill system-settings --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill system-settings --agent codex claude-code --copy
 ```
 
 This selects only `system-settings` for Codex and Claude Code in that project. Replace its name with another skill from the [catalog](SKILL_CATALOG.md). Review the selected source, names, agents, scope and destinations in the CLI summary. npm may ask to download the pinned CLI; the external installer can prompt too. These examples do not force approval. For one agent use `--agent codex` or `--agent claude-code`.
@@ -31,13 +31,15 @@ Test-Path '.claude/skills/system-settings/SKILL.md'
 
 Expect `True` for both. Refresh the coding-agent session, open the application, then type the skill's chat request, for example `$system-settings scan`. Installation does not execute the skill. For global availability, add `-g` to the npx command intentionally and verify the absolute destinations in its summary instead of the project-relative checks.
 
-Remote commands use the published source; local unpushed changes are not available through them. Use `npx skills@1.7.4 add https://github.com/Etriii/agent-skills --list` to inspect published names. See the [npx guide](docs/NPX_INSTALLATION.md) for complete packs, scope, [troubleshooting](docs/NPX_INSTALLATION.md#troubleshooting), and update/removal ownership. No curl-to-shell installer is shipped; curl below downloads an archive without executing it.
+Remote commands use the published source; local unpushed changes are not available through them. Use `npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --list` to inspect published names. See the [npx guide](docs/NPX_INSTALLATION.md) for complete packs, scope, [troubleshooting](docs/NPX_INSTALLATION.md#troubleshooting), and update/removal ownership. No curl-to-shell installer is shipped; curl below downloads an archive without executing it.
 
 **Ultimate QA core/client exception:** their templates/helpers must stay available after installation. Follow the [curl ZIP and npx setup](docs/NPX_INSTALLATION.md#ultimate-qa-support-files) to keep the kit and installed skills on the same source snapshot. This does not require a manual Git clone. Standalone QA specialists have their own runtime requirements.
 
 ## Update installed skills
 
 Use the installer that owns each copy and save custom edits first. For npx-managed copies, follow the [project/global update commands](docs/NPX_INSTALLATION.md#update-npx-managed-skills), including single-skill selection, explicit-agent/copy reinstallation and matching QA kit refresh. Remote updates use the published recorded source/ref, not local unpushed edits. Updating files does not run the skill; refresh the coding-agent session before a separate chat invocation.
+
+If an existing npx lock records `Etriii/agent-skills`, GitHub's repository redirect should keep that source reachable after the rename. Check the update result and installed destination. If the old source fails, use the documented selected `add` command with `Etriii/dev-workflow-packs`, the same scope and agent selection, and `--copy` if the original install used copies. Do not treat a skipped update as success. The [rename guidance](docs/NPX_INSTALLATION.md#repository-rename-and-existing-installs) covers both installers.
 
 For Python-managed copies, obtain an updated complete collection using the acquisition steps below, then run the [replacement preview and apply commands](#existing-copies-and-replacement) from its root. Replacement retains old trees and Markdown history. Do not use npx to take ownership of Python-managed copies.
 
@@ -52,13 +54,13 @@ Choose one acquisition route. Skip acquisition when you already have a reviewed 
 This Windows example uses `curl.exe` and PowerShell's `Expand-Archive`. Check availability with `curl.exe --version` and `Get-Command Expand-Archive`; a browser ZIP download/extraction is the alternative below if those tools are unavailable.
 
 ```powershell
-$collectionFolder = 'D:\Tools\agent-skills-download'
+$collectionFolder = 'D:\Tools\dev-workflow-packs-download'
 if (Test-Path -LiteralPath $collectionFolder) { throw 'Reuse the existing collection, or choose a new destination folder.' }
 New-Item -ItemType Directory -Path $collectionFolder -ErrorAction Stop | Out-Null
-curl.exe --fail --location --output "$collectionFolder\agent-skills-main.zip" 'https://github.com/Etriii/agent-skills/archive/refs/heads/main.zip'
+curl.exe --fail --location --output "$collectionFolder\dev-workflow-packs-main.zip" 'https://github.com/Etriii/dev-workflow-packs/archive/refs/heads/main.zip'
 if ($LASTEXITCODE -ne 0) { throw 'Collection download failed.' }
-Expand-Archive -LiteralPath "$collectionFolder\agent-skills-main.zip" -DestinationPath $collectionFolder -ErrorAction Stop
-Set-Location "$collectionFolder\agent-skills-main"
+Expand-Archive -LiteralPath "$collectionFolder\dev-workflow-packs-main.zip" -DestinationPath $collectionFolder -ErrorAction Stop
+Set-Location "$collectionFolder\dev-workflow-packs-main"
 Get-Item '.\tools\install_skills.py'
 ```
 
@@ -68,9 +70,9 @@ Expected result: the extracted collection root contains `tools/`, `packs/`, `REA
 
 ```powershell
 New-Item -ItemType Directory -Path 'D:\Tools' -Force | Out-Null
-git clone https://github.com/Etriii/agent-skills.git 'D:\Tools\agent-skills'
+git clone https://github.com/Etriii/dev-workflow-packs.git 'D:\Tools\dev-workflow-packs'
 if ($LASTEXITCODE -ne 0) { throw 'Clone failed; resolve the error before using the destination.' }
-Set-Location 'D:\Tools\agent-skills'
+Set-Location 'D:\Tools\dev-workflow-packs'
 Get-Item '.\tools\install_skills.py'
 ```
 
@@ -78,7 +80,7 @@ For unpublished local changes, you may also use the complete local copy as an np
 
 ```powershell
 Set-Location 'D:\My App'
-npx skills@1.7.4 add 'D:\Tools\agent-skills' --skill system-settings --agent codex claude-code --copy
+npx skills@1.7.4 add 'D:\Tools\dev-workflow-packs' --skill system-settings --agent codex claude-code --copy
 ```
 
 Replace the source with the actual extracted/cloned root. This local-source alternative does require a local copy; the ordinary GitHub npx route above does not require you to acquire one manually.

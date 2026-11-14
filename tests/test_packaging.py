@@ -18,28 +18,28 @@ import package_skills
 
 class PackagingTests(unittest.TestCase):
     def test_archive_has_exact_checksums_support_files_and_repeatable_bytes(self):
-        output = Path(tempfile.gettempdir()) / f"agent-skills-package-{uuid.uuid4().hex}"
+        output = Path(tempfile.gettempdir()) / f"dev-workflow-packs-package-{uuid.uuid4().hex}"
         output.mkdir()
         self.addCleanup(shutil.rmtree, output)
         archive, checksum = package_skills.build(ROOT, output)
         with ZipFile(archive) as zipped:
             names = zipped.namelist()
-            self.assertTrue(all(name.startswith("agent-skills/") for name in names))
+            self.assertTrue(all(name.startswith("dev-workflow-packs/") for name in names))
             self.assertFalse(any(part in package_skills.EXCLUDED for name in names for part in name.split("/")))
-            self.assertIn("agent-skills/packs/ultimate-qa/tools/qa_preflight.py", names)
-            self.assertIn("agent-skills/packs/ultimate-qa/04_REQUIREMENTS_TEMPLATE/02_PROJECT_CONTEXT.md", names)
-            self.assertIn("agent-skills/packs/developer-skills/skills/blocker-check/SKILL.md", names)
-            self.assertIn("agent-skills/tools/records.py", names)
-            self.assertIn("agent-skills/CONTRIBUTING.md", names)
-            self.assertIn("agent-skills/AGENTS.md", names)
+            self.assertIn("dev-workflow-packs/packs/ultimate-qa/tools/qa_preflight.py", names)
+            self.assertIn("dev-workflow-packs/packs/ultimate-qa/04_REQUIREMENTS_TEMPLATE/02_PROJECT_CONTEXT.md", names)
+            self.assertIn("dev-workflow-packs/packs/developer-skills/skills/blocker-check/SKILL.md", names)
+            self.assertIn("dev-workflow-packs/tools/records.py", names)
+            self.assertIn("dev-workflow-packs/CONTRIBUTING.md", names)
+            self.assertIn("dev-workflow-packs/AGENTS.md", names)
             for skill in ROOT.glob("packs/*/skills/*/SKILL.md"):
                 readme = skill.with_name("README.md").relative_to(ROOT).as_posix()
-                self.assertIn(f"agent-skills/{readme}", names)
-            manifest = zipped.read("agent-skills/SNAPSHOT_SHA256SUMS").decode()
+                self.assertIn(f"dev-workflow-packs/{readme}", names)
+            manifest = zipped.read("dev-workflow-packs/SNAPSHOT_SHA256SUMS").decode()
             rows = dict(line.split("  ", 1)[::-1] for line in manifest.splitlines())
-            self.assertEqual(set(rows), {name.removeprefix("agent-skills/") for name in names} - {"SNAPSHOT_SHA256SUMS"})
+            self.assertEqual(set(rows), {name.removeprefix("dev-workflow-packs/") for name in names} - {"SNAPSHOT_SHA256SUMS"})
             for name, expected in rows.items():
-                self.assertEqual(sha256(zipped.read(f"agent-skills/{name}")).hexdigest(), expected)
+                self.assertEqual(sha256(zipped.read(f"dev-workflow-packs/{name}")).hexdigest(), expected)
         self.assertEqual(checksum, sha256(archive.read_bytes()).hexdigest())
         self.assertEqual(package_skills.build(ROOT, output)[1], checksum)
         self.assertEqual((output / "SHA256SUMS").read_text().split()[0], checksum)

@@ -1,6 +1,6 @@
-# Agent Skills
+# Dev Workflow Packs
 
-A collection of installable skill packs for Codex and Claude. Each pack keeps related skills, templates and helpers together. Direct npx commands install selected skills; an optional shared Python tool provides Markdown operation records and retained content backups.
+A collection of installable development workflow packs for Codex and Claude. Each pack keeps related skills, templates and helpers together. Direct npx commands install selected skills; an optional shared Python tool provides Markdown operation records and retained content backups.
 
 Install directly with `npx skills` using Node.js 22.20+ and npm; ordinary skills need no manual clone or checkout. The optional Python 3.11+ route preserves manifest checks, backups and Markdown operation records after you acquire a complete local copy. [Installation steps](INSTALL.md) explain both routes and every prerequisite.
 
@@ -36,7 +36,7 @@ Prerequisites: Node.js 22.20+ with npm/npx, network access to npm/GitHub, and Gi
 
 ```powershell
 Set-Location 'D:\My App'
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills --skill system-settings --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill system-settings --agent codex claude-code --copy
 ```
 
 Review the CLI's selection and destination summary. Confirm `.agents/skills/system-settings/SKILL.md` and `.claude/skills/system-settings/SKILL.md` exist in the application, refresh the agent session, then enter `$system-settings scan` in agent chat. Installing files does not start the skill. [Detailed checks and troubleshooting](docs/NPX_INSTALLATION.md) cover missing tools, names and refresh issues.
@@ -44,8 +44,8 @@ Review the CLI's selection and destination summary. Confirm `.agents/skills/syst
 List published skills or install the complete Developer Skills pack from the same application folder:
 
 ```powershell
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills --list
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills/tree/main/packs/developer-skills --skill '*' --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --list
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs/tree/main/packs/developer-skills --skill '*' --agent codex claude-code --copy
 ```
 
 Project scope is the example above. Add `-g` only when you want availability across projects; choose `--agent codex` or `--agent claude-code` for one agent. `--copy` selects copies instead of links. npm may request permission to download the pinned CLI, and installation prompts vary by host. These examples do not force noninteractive approval.
@@ -58,13 +58,13 @@ For existing npx-managed copies, see [update commands](docs/NPX_INSTALLATION.md#
 
 ## Optional local download or checkout
 
-You only need to obtain the collection yourself for the optional recorded/offline Python route, a local unpublished source, contribution, or a persistent QA kit. Ordinary remote npx installation obtains its source for you. Follow the [complete ZIP/curl or clone steps](INSTALL.md#optional-local-copy-for-python-and-offline-use). You can also use [GitHub](https://github.com/Etriii/agent-skills) **Code > Download ZIP**, extract it completely, and open PowerShell in the inner root containing `tools/` and `packs/`. Optional Git alternative:
+You only need to obtain the collection yourself for the optional recorded/offline Python route, a local unpublished source, contribution, or a persistent QA kit. Ordinary remote npx installation obtains its source for you. Follow the [complete ZIP/curl or clone steps](INSTALL.md#optional-local-copy-for-python-and-offline-use). You can also use [GitHub](https://github.com/Etriii/dev-workflow-packs) **Code > Download ZIP**, extract it completely, and open PowerShell in the inner root containing `tools/` and `packs/`. Optional Git alternative:
 
 ```powershell
 New-Item -ItemType Directory -Path 'D:\Tools' -Force | Out-Null
-git clone https://github.com/Etriii/agent-skills.git 'D:\Tools\agent-skills'
+git clone https://github.com/Etriii/dev-workflow-packs.git 'D:\Tools\dev-workflow-packs'
 if ($LASTEXITCODE -ne 0) { throw 'Clone failed; resolve the error before using the destination.' }
-Set-Location 'D:\Tools\agent-skills'
+Set-Location 'D:\Tools\dev-workflow-packs'
 ```
 
 Keep the complete collection, including `tools/` and the selected pack's support files. Remote commands install the version currently on GitHub; local changes become available there only after publication.
@@ -75,7 +75,7 @@ To build a local downloadable snapshot:
 python tools/package_skills.py
 ```
 
-This creates `dist/agent-skills-0.1.0.zip` and `dist/SHA256SUMS`. A local ZIP is a working-tree snapshot, not proof of a published GitHub release. [Publishing instructions](docs/PUBLISHING.md) cover repository setup, license decisions and releases.
+This creates `dist/dev-workflow-packs-0.1.0.zip` and `dist/SHA256SUMS`. A local ZIP is a working-tree snapshot, not proof of a published GitHub release. [Publishing instructions](docs/PUBLISHING.md) cover repository setup, license decisions and releases.
 
 ## Optional installation with Markdown records
 
@@ -128,7 +128,7 @@ Previews, cancellations, validation failures, rolled-back operations and unchang
 ## Structure and checks
 
 ```text
-agent-skills/
+dev-workflow-packs/
   packs/
     developer-skills/{skills,tools,docs,...}
     ultimate-qa/{skills,tools,tests,04_REQUIREMENTS_TEMPLATE,...}

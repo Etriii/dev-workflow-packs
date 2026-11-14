@@ -23,7 +23,7 @@ For a project install, change to the existing application folder first. This exa
 
 ```powershell
 Set-Location 'D:\My App'
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills --skill system-settings --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill system-settings --agent codex claude-code --copy
 ```
 
 Expected project result: `.agents/skills/system-settings/SKILL.md` for Codex and `.claude/skills/system-settings/SKILL.md` for Claude Code. From the same folder:
@@ -38,7 +38,7 @@ Both should be `True` for the selected two-agent project install. Refresh the co
 For global availability across projects, choose this alternative from any folder:
 
 ```powershell
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills --skill system-settings --agent codex claude-code -g --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill system-settings --agent codex claude-code -g --copy
 ```
 
 Do not run both scope examples unless both copies are intended. Read the global destinations in the CLI summary; the relative project checks do not verify them. Select multiple skills with `--skill plan-review blocker-check`. For one agent use `--agent codex` or `--agent claude-code`. npx does not use Python's `--agent both`. Canonical storage and agent copies are managed by the external CLI.
@@ -50,8 +50,8 @@ Review the displayed source, selection, scope and destinations. `--copy` avoids 
 PowerShell, starting in the target application. List a pack, then select all skills in that source for both agents:
 
 ```powershell
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills/tree/main/packs/developer-skills --list
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills/tree/main/packs/developer-skills --skill '*' --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs/tree/main/packs/developer-skills --list
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs/tree/main/packs/developer-skills --skill '*' --agent codex claude-code --copy
 ```
 
 Quote `'*'` so PowerShell passes it literally. Use a pack-specific source to select only that pack. Avoid the CLI's `--all` shorthand when targeting only Codex: that option also selects every agent and skips approval. The local developer pack has 31 skills; Ultimate QA has 9. Remote counts depend on the published revision. The [catalog](../SKILL_CATALOG.md) links to each skill's README.
@@ -65,13 +65,13 @@ This Windows route also needs `curl.exe` and PowerShell's `Expand-Archive`. Veri
 PowerShell, from any folder. Replace `D:\My App` with the existing application. Choose a new durable `$qaKitFolder`; if you already have a matching kit, skip download/extraction and use the reuse instructions below.
 
 ```powershell
-$qaKitFolder = 'D:\Tools\agent-skills-qa'
+$qaKitFolder = 'D:\Tools\dev-workflow-packs-qa'
 if (Test-Path -LiteralPath $qaKitFolder) { throw 'Reuse the existing QA kit, or choose a new kit folder.' }
 New-Item -ItemType Directory -Path $qaKitFolder -ErrorAction Stop | Out-Null
-curl.exe --fail --location --output "$qaKitFolder\agent-skills-main.zip" 'https://github.com/Etriii/agent-skills/archive/refs/heads/main.zip'
+curl.exe --fail --location --output "$qaKitFolder\dev-workflow-packs-main.zip" 'https://github.com/Etriii/dev-workflow-packs/archive/refs/heads/main.zip'
 if ($LASTEXITCODE -ne 0) { throw 'QA kit download failed.' }
-Expand-Archive -LiteralPath "$qaKitFolder\agent-skills-main.zip" -DestinationPath $qaKitFolder -ErrorAction Stop
-$env:ULTIMATE_QA_KIT = Join-Path $qaKitFolder 'agent-skills-main\packs\ultimate-qa'
+Expand-Archive -LiteralPath "$qaKitFolder\dev-workflow-packs-main.zip" -DestinationPath $qaKitFolder -ErrorAction Stop
+$env:ULTIMATE_QA_KIT = Join-Path $qaKitFolder 'dev-workflow-packs-main\packs\ultimate-qa'
 Set-Location 'D:\My App'
 npx skills@1.7.4 add "$env:ULTIMATE_QA_KIT" --skill ultimate-qa ultimate-qa-client --agent codex claude-code --copy
 ```
@@ -90,7 +90,7 @@ Test-Path '.claude/skills/ultimate-qa-client/SKILL.md'
 Expect `True` for the file checks and helper usage output. To reuse the same kit later or install all nine QA skills from it:
 
 ```powershell
-$env:ULTIMATE_QA_KIT = 'D:\Tools\agent-skills-qa\agent-skills-main\packs\ultimate-qa'
+$env:ULTIMATE_QA_KIT = 'D:\Tools\dev-workflow-packs-qa\dev-workflow-packs-main\packs\ultimate-qa'
 Set-Location 'D:\My App'
 npx skills@1.7.4 add "$env:ULTIMATE_QA_KIT" --skill '*' --agent codex claude-code --copy
 ```
@@ -108,7 +108,7 @@ The Python installer remains the simpler route when you want it to generate `kit
 | `node`, `npm` or `npx` is not recognized | Install Node.js 22.20+ with npm, reopen the terminal, and rerun the version checks. An old terminal may still have an old PATH. |
 | PowerShell blocks `npx.ps1` or `npm.ps1` | Use `npx.cmd` or `npm.cmd` for the same command. Changing execution policy is not required for these examples. |
 | GitHub/npm cannot be reached, Git is unavailable, or private access fails | Restore the required connectivity/tool/access and rerun the same selected source. Do not report an installation or silently choose an unrelated source. |
-| A skill name is not found | Run `npx skills@1.7.4 add https://github.com/Etriii/agent-skills --list`. Confirm spelling and the published revision. New local edits may not be published. |
+| A skill name is not found | Run `npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --list`. Confirm spelling and the published revision. New local edits may not be published. |
 | You need an unpublished local skill | Acquire the complete source using the [optional ZIP/clone steps](../INSTALL.md#optional-local-copy-for-python-and-offline-use), then use that actual local root as the npx source. A remote command does not read an unpushed local branch. |
 | `python tools/install_skills.py` cannot open the file | That optional route needs a local copy. Change to its inner root containing `tools/` and `packs/`; do not run the script relative to the target application folder. |
 | A Python dry-run finished but no skill appears | Dry-run writes nothing. Run the separate changing command from the collection root and complete its confirmation. |
@@ -121,6 +121,12 @@ This repository does not publish a curl-to-shell installation script. curl examp
 ## Updates and removal
 
 Use the installer that owns each copy. The commands below apply to npx-managed copies; Python-managed copies use [recorded replacement](../INSTALL.md#existing-copies-and-replacement). Save custom edits before updating: external installs do not produce `.agent-skills/history/` records, validate this collection's `SHA256SUMS`, or use its guarded uninstall and retained backups.
+
+### Repository rename and existing installs
+
+The source repository was named `Etriii/agent-skills` before `Etriii/dev-workflow-packs`. Existing npx lock entries can retain the old URL; GitHub's redirect normally resolves it after the rename. Run a scoped update below, inspect its summary, and verify the installed files. If the recorded source no longer resolves or the CLI skips the skill, rerun a selected `add` from the new URL with the original scope, agents and copy mode. The new command must be run from the application folder for a project install. Do not switch a pinned revision or local source to the default branch without deciding to do so.
+
+Python-managed installations keep their `.agent-skills/history/` directory and ownership records. Obtain the updated collection under any local folder name, then preview and apply the [recorded replacement](../INSTALL.md#existing-copies-and-replacement). Do not rename that state directory; it is part of the installed-copy contract. A previously configured `ULTIMATE_QA_KIT` path remains valid while its old kit exists. For a new QA snapshot, set it to the new durable kit and refresh matching core/client skill copies together.
 
 ### Update npx-managed skills
 
@@ -161,7 +167,7 @@ npx skills@1.7.4 update system-settings --global
 CLI 1.7.4's updater derives agent destinations and does not forward `--agent` or `--copy` to its internal installation. If you need explicit agent selection or Windows copies instead of links, rerun the original selected `add` command with the same source, agents and scope. For example, PowerShell from the original application folder, refresh only system-settings for Codex and Claude Code:
 
 ```powershell
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills --skill system-settings --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill system-settings --agent codex claude-code --copy
 ```
 
 Replace the skill name and source with the original selection; use only `--agent codex` or `--agent claude-code` if that was the intended agent. Add `-g` only when refreshing an existing global copy. This fallback also applies to skipped local-path installs or older lock entries without enough tracking information. Refresh the local source first when reinstalling from a local folder. Do not switch a local or pinned source to the repository's default branch implicitly.
@@ -194,7 +200,7 @@ Use an empty temporary application directory outside the collection. These comma
 
 ```powershell
 $collectionPath = (Get-Location).Path
-$testProject = Join-Path ([System.IO.Path]::GetTempPath()) ('agent-skills-check-' + [guid]::NewGuid().ToString('N'))
+$testProject = Join-Path ([System.IO.Path]::GetTempPath()) ('dev-workflow-packs-check-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $testProject | Out-Null
 Push-Location $testProject
 try {

@@ -2,7 +2,7 @@
 
 Thirty-one independent skills for prompt intake, implementation packages, planning, UI/UX and mobile review, reports, system settings, implementation, generic critique, development reviews, delivery checks and handoff. Each README and metadata file is included in the payload manifest. No private runner, Docker or API key is required. The Python installer works offline once the source is downloaded.
 
-This pack belongs to [Agent Skills](../../README.md). Each skill has its own README with installation, usage and prerequisites.
+This pack belongs to [Dev Workflow Packs](../../README.md). Each skill has its own README with installation, usage and prerequisites.
 
 The [command guide](../../docs/SKILL_COMMANDS.md) lists copyable requests, supported continuous workflows, expected outputs and stopping points for every skill. Natural-language reviewers do not inherit another skill's automation flags.
 
@@ -14,7 +14,7 @@ Recommended route: install Node.js 22.20+ with npm/npx, ensure Git is available 
 
 ```powershell
 Set-Location 'D:\My App'
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills --skill system-settings --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs --skill system-settings --agent codex claude-code --copy
 ```
 
 Expected result: only system-settings is selected for Codex and Claude Code, with `.agents/skills/system-settings/SKILL.md` and `.claude/skills/system-settings/SKILL.md` under the application. Review the CLI summary, refresh the agent session, then use `$system-settings scan` or `/system-settings scan` in agent chat. For one agent choose `--agent codex` or `--agent claude-code`; add `-g` only for intended global availability.
@@ -22,7 +22,7 @@ Expected result: only system-settings is selected for Codex and Claude Code, wit
 For all Developer Skills published at that remote source, run this separate selection from the same application folder:
 
 ```powershell
-npx skills@1.7.4 add https://github.com/Etriii/agent-skills/tree/main/packs/developer-skills --skill '*' --agent codex claude-code --copy
+npx skills@1.7.4 add https://github.com/Etriii/dev-workflow-packs/tree/main/packs/developer-skills --skill '*' --agent codex claude-code --copy
 ```
 
 Quote `'*'` and use this pack-specific source to avoid selecting other packs. Remote commands use published files; an unpushed local change is not installed from GitHub. The [npx guide](../../docs/NPX_INSTALLATION.md) gives prerequisite checks, expected files, troubleshooting, scope, updates and removal. External installs do not write this collection's Markdown operation history.

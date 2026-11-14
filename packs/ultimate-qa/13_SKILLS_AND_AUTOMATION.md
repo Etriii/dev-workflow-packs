@@ -9,7 +9,7 @@ This kit lives at `packs/ultimate-qa/` in Agent Skills. Keep its templates and h
 Recommended installation uses npx. Standalone specialists can install directly from the repository without a manual clone. Core/client workflows additionally require a retained kit: first follow the [curl ZIP/npx kit setup](../../docs/NPX_INSTALLATION.md#ultimate-qa-support-files). Keep that snapshot available; then run the selection from the target application. PowerShell, with example paths to replace:
 
 ```powershell
-$env:ULTIMATE_QA_KIT = 'D:\Tools\agent-skills-qa\agent-skills-main\packs\ultimate-qa'
+$env:ULTIMATE_QA_KIT = 'D:\Tools\dev-workflow-packs-qa\dev-workflow-packs-main\packs\ultimate-qa'
 Set-Location 'D:\My App'
 npx skills@1.7.4 add "$env:ULTIMATE_QA_KIT" --skill ultimate-qa ultimate-qa-architecture --agent codex claude-code --copy
 ```

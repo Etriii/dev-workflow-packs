@@ -24,13 +24,13 @@ Get-Command Expand-Archive
 PowerShell: replace `D:\My App` with your existing application folder. Choose a new, durable kit directory for `$qaKitFolder`; do not use an external CLI's temporary source directory.
 
 ```powershell
-$qaKitFolder = 'D:\Tools\agent-skills-qa'
+$qaKitFolder = 'D:\Tools\dev-workflow-packs-qa'
 if (Test-Path -LiteralPath $qaKitFolder) { throw 'Reuse the existing QA kit below, or choose a new kit folder.' }
 New-Item -ItemType Directory -Path $qaKitFolder -ErrorAction Stop | Out-Null
-curl.exe --fail --location --output "$qaKitFolder\agent-skills-main.zip" 'https://github.com/Etriii/agent-skills/archive/refs/heads/main.zip'
+curl.exe --fail --location --output "$qaKitFolder\dev-workflow-packs-main.zip" 'https://github.com/Etriii/dev-workflow-packs/archive/refs/heads/main.zip'
 if ($LASTEXITCODE -ne 0) { throw 'QA kit download failed.' }
-Expand-Archive -LiteralPath "$qaKitFolder\agent-skills-main.zip" -DestinationPath $qaKitFolder -ErrorAction Stop
-$env:ULTIMATE_QA_KIT = Join-Path $qaKitFolder 'agent-skills-main\packs\ultimate-qa'
+Expand-Archive -LiteralPath "$qaKitFolder\dev-workflow-packs-main.zip" -DestinationPath $qaKitFolder -ErrorAction Stop
+$env:ULTIMATE_QA_KIT = Join-Path $qaKitFolder 'dev-workflow-packs-main\packs\ultimate-qa'
 Set-Location 'D:\My App'
 npx skills@1.7.4 add "$env:ULTIMATE_QA_KIT" --skill ultimate-qa-client --agent codex claude-code --copy
 ```
@@ -38,7 +38,7 @@ npx skills@1.7.4 add "$env:ULTIMATE_QA_KIT" --skill ultimate-qa-client --agent c
 The selected skill and support files now come from the same downloaded source. Keep the kit folder available. To reuse that existing kit instead of downloading again, use:
 
 ```powershell
-$env:ULTIMATE_QA_KIT = 'D:\Tools\agent-skills-qa\agent-skills-main\packs\ultimate-qa'
+$env:ULTIMATE_QA_KIT = 'D:\Tools\dev-workflow-packs-qa\dev-workflow-packs-main\packs\ultimate-qa'
 Set-Location 'D:\My App'
 npx skills@1.7.4 add "$env:ULTIMATE_QA_KIT" --skill ultimate-qa-client --agent codex claude-code --copy
 ```
@@ -68,10 +68,10 @@ Global destinations are shown by the CLI; the project-relative `Test-Path` check
 
 Keep this route when you want manifest verification, retained backups and Markdown operation history. It requires Python 3.11+ and a **complete local collection** first. Follow [download/extract or clone steps](../../../../INSTALL.md#optional-local-copy-for-python-and-offline-use), then identify the root containing `tools/`, `packs/`, and `README.md`. `tools/install_skills.py` is a file in that root, not a global command.
 
-PowerShell: replace `D:\Tools\agent-skills` with that actual collection root and `D:\My App` with the existing destination application. For a ZIP, the extracted root may instead end in `agent-skills-main`.
+PowerShell: replace `D:\Tools\dev-workflow-packs` with that actual collection root and `D:\My App` with the existing destination application. For a ZIP, the extracted root may instead end in `dev-workflow-packs-main`.
 
 ```powershell
-Set-Location 'D:\Tools\agent-skills'
+Set-Location 'D:\Tools\dev-workflow-packs'
 python --version
 python tools/install_skills.py --pack ultimate-qa --agent both --project "D:\My App" --skills ultimate-qa-client --dry-run
 python tools/install_skills.py --pack ultimate-qa --agent both --project "D:\My App" --skills ultimate-qa-client

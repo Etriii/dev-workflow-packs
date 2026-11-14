@@ -1,6 +1,6 @@
 # GitHub downloads and publication
 
-The configured source repository is [Etriii/agent-skills](https://github.com/Etriii/agent-skills), with `main` as its default branch. Verify the remote revision when publishing; a local ZIP does not establish a GitHub release or publish local edits.
+The configured source repository is [Etriii/dev-workflow-packs](https://github.com/Etriii/dev-workflow-packs), with `main` as its default branch. Verify the remote revision when publishing; a local ZIP does not establish a GitHub release or publish local edits.
 
 ## Local download artifact
 
@@ -8,7 +8,7 @@ The configured source repository is [Etriii/agent-skills](https://github.com/Etr
 python -B -m unittest discover -s tests -v
 python -B -m unittest discover -s packs/ultimate-qa/tests -v
 python tools/package_skills.py
-Get-FileHash dist/agent-skills-0.1.0.zip -Algorithm SHA256
+Get-FileHash dist/dev-workflow-packs-0.1.0.zip -Algorithm SHA256
 ```
 
 The ZIP contains the complete collection, both packs, required support files, shared tools and documentation. It excludes Git internals, bytecode, local lifecycle state, backups, environments and previous archives. It includes `SNAPSHOT_SHA256SUMS` for packaged-file integrity; `dist/SHA256SUMS` hashes the resulting ZIP. Extract it to a new folder and run the same tests before sharing. QA core/client installation must use the extracted pack's actual location.
