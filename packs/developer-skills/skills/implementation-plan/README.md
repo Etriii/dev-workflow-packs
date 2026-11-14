@@ -23,7 +23,7 @@ The skill reads the PDF as source requirements, checks unclear or conflicting de
 You may put options before the plan path if that reads more naturally. This is an alternative chat request:
 
 ```text
-$implementation-plan --skills migration,verify-and-stop --max-phases 4 "D:\My App\docs\hiring-plan.md"
+$implementation-plan --skills migration,verify-and-stop --max-phases 4 --test-scope full "D:\My App\docs\hiring-plan.md"
 ```
 
 The named skills must be installed and relevant; the skill reads their instructions before assigning or using them.
@@ -70,6 +70,8 @@ $implementation-plan help
 `revise` and changing `skills` requests save a new revision, preserve earlier files and valid evidence, and report the new path. Omitted options inherit prior values. `skills` without changes, `prompt`, `check`, `status`, and `help` are read-only. Unknown phase IDs and invalid option combinations are errors. Adding and removing the same skill in one request is invalid. `status` without a path lists recognized packages in the current project; it does not select one for editing.
 
 `--max-phases N` proposes the Custom maximum hard cap. The skill confirms it and the resulting exact phase count before acting. The package store records both values and rejects a count above the cap. `--skills name1,name2` selects skills. The default `--skills-mode auto` reads their instructions and assigns them to relevant phases. `--skills-mode all` places all selected skills in every prompt; conflicts and missing skills are reported rather than silently resolved. The skill does not install selected skills. `--commits off` is the default: prompts may draft messages but do not authorize commits. `--commits scoped` authorizes only owned local commits after selected implementation and required checks pass, subject to repository rules. It never authorizes a push or deployment.
+
+`--test-scope focused` is the default. It runs relevant tests for the changed behavior and affected integrations. `--test-scope full` also requires the complete configured suite for each component changed in the selected implementation phase. If you specifically need the entire backend suite, say so in the request; the package records that named suite in its runbook and prompts. The agent finds the project's actual test command and reports any missing prerequisite or unsuccessful run. Preparing a package records the requirement without running application tests. Read-only package commands run none. A full suite is never reported as passed when it was skipped or interrupted.
 
 Package choices save under `<project-root>/.implementation-plans/<feature>-implementation/<UTC-run-id>/`. Each revision has a unique run directory. The skill adds `/.implementation-plans/` to the root `.gitignore` when needed and verifies exclusion before saving. It leaves existing `docs/` content untouched. Earlier packages under `docs/` remain readable; revisions of them use the new root and link back to the old path without moving it. Tracked output is refused without automatic untracking. In a non-Git project exclusion is unverified. Resume an identified draft revision after interruption; never overwrite or discard an earlier one. A failed storage check stops saving and reports the exact reason.
 

@@ -151,13 +151,15 @@ def ensure_ignore(root, rule, probe, is_git):
         raise ValueError("Git did not confirm package exclusion")
 
 
-def validate_options(max_phases, skills, skills_mode, commits, phase_count=None):
+def validate_options(max_phases, skills, skills_mode, commits, phase_count=None, test_scope="focused"):
     if max_phases is not None and max_phases < 1:
         raise ValueError("--max-phases must be positive")
     if phase_count is not None and (phase_count < 1 or (max_phases is not None and phase_count > max_phases)):
         raise ValueError("--phase-count must be positive and within --max-phases")
     if skills_mode not in ("auto", "all") or commits not in ("off", "scoped"):
         raise ValueError("Invalid skills mode or commit policy")
+    if test_scope not in ("focused", "full"):
+        raise ValueError("--test-scope must be focused or full")
     names = [name.strip() for name in (skills or "").split(",") if name.strip()]
     if len(names) != len(set(names)) or any(not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name) for name in names):
         raise ValueError("Skills must be unique lowercase skill names")
@@ -190,7 +192,7 @@ def pdf_snapshot(path):
     return content
 
 
-def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits="off", previous=None, source_plan=None, phase_count=None, source_document=None):
+def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits="off", previous=None, source_plan=None, phase_count=None, source_document=None, test_scope=None):
     if source_plan and source_document:
         raise ValueError("Choose one source plan or source PDF")
     root, is_git = project_root(project)
@@ -216,7 +218,9 @@ def start(project, feature, max_phases=None, skills="", skills_mode="auto", comm
         slug = slugify(feature) + "-implementation"
         prior_package = None
         prior = None
-    names = validate_options(max_phases, skills, skills_mode, commits, phase_count)
+    if test_scope is None:
+        test_scope = prior.get("test_scope", "focused") if prior else "focused"
+    names = validate_options(max_phases, skills, skills_mode, commits, phase_count, test_scope)
     original = None
     source = {"origin": "session"}
     document = None
@@ -282,7 +286,7 @@ def start(project, feature, max_phases=None, skills="", skills_mode="auto", comm
     data = {"schema_version": 2, "owner": OWNER, "feature": feature, "status": "draft",
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "max_phases": max_phases, "phase_count": phase_count,
-            "skills": names, "skills_mode": skills_mode,
+            "skills": names, "skills_mode": skills_mode, "test_scope": test_scope,
             "commits": commits, "previous": str(prior_package) if prior_package else None,
             "phases": {}, "skill_assignments": {}, "source_plan": source,
             "source_document": document}
@@ -334,6 +338,9 @@ def inspect(package):
                     errors.append(f"Missing {SOURCE_DOCUMENT}")
                 elif sha256(snapshot.read_bytes()).hexdigest() != expected:
                     errors.append("Source PDF differs from its snapshot")
+    test_scope = data.get("test_scope", "focused")
+    if test_scope not in ("focused", "full"):
+        errors.append("Invalid test scope")
     phases = data.get("phases")
     if not isinstance(phases, dict) or not phases:
         errors.append("No phase prompt map")
@@ -382,7 +389,7 @@ def inspect(package):
                 errors.append(f"Broken local link in {path.name}: {raw}")
     return {"package": str(package), "status": data.get("status"), "phases": phases,
             "skills": data.get("skills"), "skill_assignments": data.get("skill_assignments"),
-            "errors": errors, "git_exclusion_verified": is_git}
+            "test_scope": test_scope, "errors": errors, "git_exclusion_verified": is_git}
 
 
 def list_packages(project):
@@ -429,6 +436,7 @@ def main(argv=None):
     command.add_argument("--skills", default="")
     command.add_argument("--skills-mode", choices=("auto", "all"), default="auto")
     command.add_argument("--commits", choices=("off", "scoped"), default="off")
+    command.add_argument("--test-scope", choices=("focused", "full"))
     command.add_argument("--previous")
     command.add_argument("--source-plan")
     command.add_argument("--source-document")
@@ -444,7 +452,7 @@ def main(argv=None):
         if args.action == "start":
             result = start(args.project, args.feature, args.max_phases, args.skills,
                            args.skills_mode, args.commits, args.previous, args.source_plan,
-                           args.phase_count, args.source_document)
+                           args.phase_count, args.source_document, args.test_scope)
         elif args.action == "list":
             result = {"packages": list_packages(args.project)}
         else:

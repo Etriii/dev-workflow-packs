@@ -11,14 +11,14 @@ The package records a plan, not completed work. Make every file specific to the 
 | `CONTRACTS.md` | Shared business, API, data, permission and failure invariants that phases must preserve. |
 | `PHASES.md` | Ordered tasks, dependencies, deliverables, acceptance ownership and selected-skill assignments with reasons. |
 | `PROMPTS.md` | Index linking each executable `prompts/Pxx_*.md`; no duplicated prompt bodies. |
-| `RUNBOOK.md` | Shared preflight, verification, Git, recovery and stop rules. |
+| `RUNBOOK.md` | Shared preflight, selected test scope and actual suite commands, Git, recovery and stop rules. |
 | `ACCEPTANCE.md` | Stable observable criteria, including failure and forbidden paths where relevant. |
 | `PROGRESS.md` | Sole status, evidence, decision, blocker and commit-outcome ledger. Begin with no implementation proof unless current source provides it. |
 | `HANDOFF.md` | Immediate next action, unresolved issues and recovery point; link to PROGRESS.md for history. |
 | `BLOCKERS.md` | Actual blocking decisions and dependency impact, with prospective cases clearly labeled as examples. |
 | `COMMIT_MESSAGES.md` | Drafts tied to repository and real changes; no fabricated validation or commit hashes. |
 
-The phase list must match the user's confirmed exact count; an optional maximum remains a separate cap. Each phase prompt names only its phase, project path and package path, prerequisites, relevant source and package sections, deliverables, acceptance checks, tracking updates and stop condition. Keep the prompt self-contained enough to start in a fresh session while linking shared detail rather than duplicating whole specifications. Use descriptive user-facing objectives; retain phase IDs only where technically needed.
+The phase list must match the user's confirmed exact count; an optional maximum remains a separate cap. Each phase prompt names only its phase, project path and package path, prerequisites, relevant source and package sections, deliverables, acceptance checks, selected test scope, tracking updates and stop condition. Keep the prompt self-contained enough to start in a fresh session while linking shared detail rather than duplicating whole specifications. Use descriptive user-facing objectives; retain phase IDs only where technically needed. In `full` scope, require the complete configured suite for each changed component or the explicitly named suite, such as the backend suite. Package creation does not run application tests. Unknown commands remain prerequisites, not fabricated commands or passing evidence.
 
 Record the source evidence used during planning and its limits. Keep a supplied Markdown plan's original bytes in `ORIGINAL_PLAN.md` and put later answers in `PLAN.md`. For PDF input, keep the original PDF in `SOURCE_DOCUMENT.pdf` and write the agreed working plan in `ORIGINAL_PLAN.md`; do not present the latter as a byte-for-byte PDF copy. The store checks supplied-file snapshot hashes. A plan created from chat is recorded before deriving the package documents. Unrun tests are `NOT_RUN`; later requirements are `DUE_LATER` only with their owner phase. Completion requires actual implementation and required proof, not a checked box, generated prompt, or prepared commit message. A revision links to its predecessor, retains valid results and marks invalidated evidence for recheck.
 

@@ -167,8 +167,10 @@ class PackageStoreTests(unittest.TestCase):
         data = json.loads((package / ".package.json").read_text(encoding="utf-8"))
         data["schema_version"] = 1
         data.pop("source_plan")
+        data.pop("test_scope")
         (package / ".package.json").write_text(json.dumps(data), encoding="utf-8")
         self.assertEqual(store.inspect(package)["errors"], [])
+        self.assertEqual(store.inspect(package)["test_scope"], "focused")
 
     def test_existing_untracked_docs_preserves_existing_ignore_bytes(self):
         self.init_git()
@@ -275,6 +277,35 @@ class PackageStoreTests(unittest.TestCase):
         self.assertEqual(store.inspect(package)["errors"], [])
         with self.assertRaisesRegex(ValueError, "within --max-phases"):
             store.start(self.root, "Offer", max_phases=1, phase_count=2)
+
+    def test_test_scope_defaults_to_focused_and_revisions_inherit_or_override(self):
+        self.init_git()
+        first = Path(store.start(self.root, "Offer")["package"])
+        self.save_complete(first)
+        self.assertEqual(store.inspect(first)["test_scope"], "focused")
+        full = Path(store.start(self.root, "Offer", previous=first,
+                                test_scope="full")["package"])
+        self.save_complete(full)
+        self.assertEqual(store.inspect(full)["test_scope"], "full")
+        inherited = Path(store.start(self.root, "Offer", previous=full)["package"])
+        self.save_complete(inherited)
+        self.assertEqual(store.inspect(inherited)["test_scope"], "full")
+        metadata = json.loads((inherited / ".package.json").read_text(encoding="utf-8"))
+        metadata["test_scope"] = "everything"
+        (inherited / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        self.assertIn("Invalid test scope", store.inspect(inherited)["errors"])
+
+    def test_cli_records_full_test_scope_and_rejects_invalid_value(self):
+        self.init_git()
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(store.main(["start", "--project", str(self.root),
+                                         "--feature", "Offer", "--test-scope", "full"]), 0)
+        package = Path(json.loads(output.getvalue())["package"])
+        self.assertEqual(json.loads((package / ".package.json").read_text(encoding="utf-8"))["test_scope"], "full")
+        with self.assertRaisesRegex(ValueError, "focused or full"):
+            store.start(self.root, "Other", test_scope="everything")
+        self.assertFalse((self.root / store.OUTPUT / "other-implementation").exists())
 
     def test_broken_links_and_skill_assignments_are_reported(self):
         self.init_git()
