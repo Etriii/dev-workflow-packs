@@ -20,7 +20,7 @@ Reuse the shared installer and transaction engine under `tools/`. Keep runtime h
 
 ## Document a change
 
-- Each skill README needs a purpose, useful invocation example, installation instructions and runtime prerequisites. Link to its `SKILL.md`, pack README and collection installation guide.
+- Each skill README needs a purpose, useful invocation example, installation and update instructions, and runtime prerequisites. Link to its `SKILL.md`, pack README and collection installation guide.
 - Each pack README needs its skill list, selected-skill and whole-pack installation, supported agents, support-file setup and removal instructions.
 - Update the collection catalog and main README when adding or removing skills or packs. Update the changelog for user-visible changes.
 - Keep comments functional and concise. Report executed checks separately from discovery, browser, provider or production claims. Do not add conversational attribution or AI signatures.
@@ -81,7 +81,7 @@ Check only one shipping skill; replace `deep-critique` with its exact catalog na
 python -B tools/check_skills.py --skill deep-critique
 ```
 
-The checker reads files without installing skills, executing payloads, changing ignore files, or contacting remote services. It reuses the existing catalog validator for structure, metadata and manifest integrity, checks authored Markdown local file links, and requires a nonempty artifact declaration. Vendored upstream Markdown retains its original link context and is excluded from link checking. Remote links and heading anchors are not checked. Exit code `0` means static checks passed; `1` means a failed check; `2` means invalid command arguments.
+The checker reads files without installing skills, executing payloads, changing ignore files, or contacting remote services. It reuses the existing catalog validator for structure, metadata and manifest integrity, checks authored Markdown local file links, and requires a nonempty artifact declaration plus the exact skill-specific project update command in a PowerShell block. Vendored upstream Markdown retains its original link context and is excluded from link checking. Remote links and heading anchors are not checked. Exit code `0` means static checks passed; `1` means a failed check; `2` means invalid command arguments.
 
 Results use `PASS`, `FAIL`, and `NOT VERIFIED`. A declaration's presence does not prove its semantics, runtime storage safety, or agent adherence. Unverified behavior and publication rights never become certified merely because static checks pass. Run the relevant helper regression tests and record separate native-agent trials when behavior or compatibility claims change. The GitHub Actions workflow runs the checker and existing collection/QA tests on Windows and Linux; it does not install skills into real profiles, publish artifacts, or grant redistribution rights.
 
@@ -92,6 +92,7 @@ Use direct `npx skills@1.7.4 add` as the recommended first installation path. Ke
 - Start with prerequisites, supported shell, starting folder, and paths to replace. Show the direct repository URL, exact skill selection, explicit agents, and project scope first. Explain `-g` separately for an intended global installation.
 - Explain that Node.js 22.20+ provides npm/npx, remote sources need network access, and Git supports repository fallback. State any additional skill runtime requirements separately. Show one executable command per line; never concatenate dry-run and install commands.
 - Document the expected selection/destination summary, how to check installed files, agent-session refresh, and the chat request that starts the skill. Listing or installing files does not run the skill.
+- Include a skill-specific, copy-paste `npx skills@1.7.4 update <exact-skill-name> --project` command in every skill README, with the PowerShell starting folder and prerequisites. Explain verification and session refresh, link Python-managed replacement, and identify when the original selected `add` must be repeated to retain explicit agents or `--copy`. A shared-guide link alone is insufficient. Core/client Ultimate QA skills must also explain how to refresh their matching durable kit. Keep this section when adding or renaming a skill.
 - Use `--agent codex claude-code` with npx for both agents and `--agent both` only with Python. Interactive prompts can differ by host; never promise a preview flag that the external CLI does not support or use `--all` as a single-agent/pack shortcut.
 - For optional Python examples, first link or show ZIP download/extraction or Git clone, identify the collection root by its `tools/` and `packs/` folders, then change to that root. Clearly separate it from the destination application. Explain that dry-run changes nothing and the subsequent command performs the installation after its existing confirmation.
 - Explain the QA core/client kit exception and its durable matching support files. Use the documented curl ZIP/npx setup or an existing local kit; do not rely on an external CLI's temporary download remaining available. A curl-to-shell bootstrap does not exist and must not be fabricated.

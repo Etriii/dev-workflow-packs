@@ -62,6 +62,29 @@ The first installer command previews and writes nothing. The second requests the
 
 Use the installer that owns an existing copy for updates/removal; npx and Python maintain different records and protections. Preserve local edits before replacement. See the [pack guide](../../README.md), [npx lifecycle](../../../../docs/NPX_INSTALLATION.md#updates-and-removal), and [recorded removal guide](../../../../UNINSTALL.md).
 
+## Update an installed copy
+
+For an existing **npx-managed project copy**, have Node.js 22.20+ with npm/npx, network access to npm and the recorded source, and Git for repository fallback. Save local edits first. PowerShell: replace `D:\My App` with the application where this skill is installed, then start there:
+
+```powershell
+Set-Location 'D:\My App'
+```
+
+Update only `migration` in that project:
+
+```powershell
+npx skills@1.7.4 update migration --project
+```
+
+Check the CLI result for updated, current, skipped or failed status; a skipped update is not success. Verify the intended installed file at the reported destination (for Codex project copies):
+
+```powershell
+Test-Path '.agents/skills/migration/SKILL.md'
+```
+
+For Claude Code project copies, check `.claude/skills/migration/SKILL.md`. Refresh the agent session before invoking the skill in chat. The updater does not forward explicit `--agent` or `--copy`; to retain those choices, rerun the selected `add` command in the Install section with the original source and scope. Python-managed copies use the [recorded replacement workflow](../../../../INSTALL.md#existing-copies-and-replacement), not this npx command. See [global scope, source and removal details](../../../../docs/NPX_INSTALLATION.md#updates-and-removal).
+
+
 ## Use
 
 Refresh the agent session and invoke this in agent chat:

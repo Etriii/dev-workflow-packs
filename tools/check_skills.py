@@ -88,6 +88,15 @@ def artifact_instructions(body: str) -> bool:
     return False
 
 
+def skill_update_command(body: str, name: str) -> bool:
+    """Require a directly copyable, project-scoped command for this skill."""
+    expected = f"npx skills@1.7.4 update {name} --project"
+    for block in re.findall(r"^```powershell\s*\n(.*?)^```", body, re.M | re.S | re.I):
+        if expected in (line.strip() for line in block.splitlines()):
+            return True
+    return False
+
+
 def check_collection(root: Path, selected: list[str] | None = None) -> list[Check]:
     """Reuse bundle validation and report each failed skill without hiding others."""
     root = safe_path(root)
@@ -126,6 +135,9 @@ def check_collection(root: Path, selected: list[str] | None = None) -> list[Chec
             body = (skill / "SKILL.md").read_text(encoding="utf-8")
             if not artifact_instructions(body):
                 raise ValueError(f"missing nonempty {POLICY_HEADING} declaration")
+            readme = (skill / "README.md").read_text(encoding="utf-8")
+            if not skill_update_command(readme, name):
+                raise ValueError(f"README.md missing copyable npx project update command for {name}")
             errors = []
             # Vendored upstream documentation retains its original link context.
             documents = [skill / "SKILL.md", skill / "README.md"]
@@ -138,7 +150,7 @@ def check_collection(root: Path, selected: list[str] | None = None) -> list[Chec
         except (OSError, ValueError) as error:
             checks.append(Check("FAIL", name, str(error)))
             continue
-        checks.append(Check("PASS", name, "structure, metadata, manifest, local file links, artifact declaration"))
+        checks.append(Check("PASS", name, "structure, metadata, manifest, local file links, artifact declaration, update command"))
         if not metadata.get("compatible_agents"):
             checks.append(Check("NOT VERIFIED", name, "native agent compatibility"))
     checks.append(Check("NOT VERIFIED", "behavior", "artifact declaration presence does not prove ignore rules, run safety, or agent adherence; run helper tests and agent trials separately"))

@@ -31,7 +31,9 @@ class CheckSkillsTests(unittest.TestCase):
         metadata = (fixture / "metadata.toml").read_text(encoding="utf-8")
         (self.skill / "metadata.toml").write_text(
             metadata + '\nskill_id = "sample-review"\nprovenance = "local-authored"\n', encoding="utf-8")
-        (self.skill / "README.md").write_text("# Sample\n\n[Instructions](SKILL.md)\n", encoding="utf-8")
+        (self.skill / "README.md").write_text(
+            "# Sample\n\n[Instructions](SKILL.md)\n\n```powershell\n"
+            "npx skills@1.7.4 update sample-review --project\n```\n", encoding="utf-8")
         self.manifest()
 
     def manifest(self):
@@ -63,6 +65,19 @@ class CheckSkillsTests(unittest.TestCase):
         (self.skill / "README.md").write_text("Changed without manifest update\n", encoding="utf-8")
         self.assertIn("checksum mismatch", self.failures()[0].detail)
 
+    def test_update_command_must_name_this_skill_and_project_scope(self):
+        path = self.skill / "README.md"
+        original = path.read_text(encoding="utf-8")
+        for command in ("npx skills@1.7.4 update other-skill --project",
+                        "npx skills@1.7.4 update sample-review --global",
+                        "See the shared update guide."):
+            with self.subTest(command=command):
+                path.write_text(original.replace("npx skills@1.7.4 update sample-review --project", command), encoding="utf-8")
+                self.manifest()
+                self.assertIn("missing copyable npx project update command", self.failures()[0].detail)
+        path.write_text(original, encoding="utf-8")
+        self.manifest()
+
     def test_missing_manifest_is_a_failed_check(self):
         (self.pack / "SHA256SUMS").unlink()
         self.assertEqual([c.subject for c in self.failures()], ["sample-review"])
@@ -90,7 +105,7 @@ class CheckSkillsTests(unittest.TestCase):
                              ("[Guide][usage]\n\n[usage]: <missing guide.md>", "missing guide.md"),
                              ("![Preview](missing.png)", "missing.png")):
             with self.subTest(target=target):
-                path.write_text(text, encoding="utf-8")
+                path.write_text(text + "\n```powershell\nnpx skills@1.7.4 update sample-review --project\n```\n", encoding="utf-8")
                 self.manifest()
                 failures = self.failures()
                 self.assertEqual(len(failures), 1)
@@ -103,7 +118,8 @@ class CheckSkillsTests(unittest.TestCase):
             "~~~markdown\n[Example](not-a-file.md)\n~~~\n"
             "`[Inline example](also-not-a-file.md)`\n"
             "[Remote](https://example.invalid/unavailable)\n"
-            "[Usage](../../../../usage%20guide.md#not-an-anchor-check)\n", encoding="utf-8")
+            "[Usage](../../../../usage%20guide.md#not-an-anchor-check)\n"
+            "```powershell\nnpx skills@1.7.4 update sample-review --project\n```\n", encoding="utf-8")
         self.manifest()
         self.assertFalse(self.failures())
 
@@ -120,7 +136,9 @@ class CheckSkillsTests(unittest.TestCase):
         self.assertIn("references/guide.md", self.failures()[0].detail)
 
     def test_local_links_cannot_escape_the_collection(self):
-        (self.skill / "README.md").write_text("[Outside](../../../../../outside.md)", encoding="utf-8")
+        (self.skill / "README.md").write_text(
+            "[Outside](../../../../../outside.md)\n"
+            "```powershell\nnpx skills@1.7.4 update sample-review --project\n```\n", encoding="utf-8")
         self.manifest()
         self.assertIn("out-of-tree", self.failures()[0].detail)
 

@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Add direct, scoped update commands to every skill README and require them for new skills in root agent and contribution instructions.
 - Use generic file, project and task placeholders in implementation-plan examples across its skill and command guides.
 - Add optional `--test-scope full` to implementation-plan packages and phase prompts, preserving focused tests by default and carrying the selected scope into revisions.
 - Accept PDF requirements as implementation-plan input, preserve the original PDF in an ignored package, and derive the working plan through questions when no plan exists.

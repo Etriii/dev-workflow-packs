@@ -2,6 +2,7 @@
 
 ## Installation documentation and recommendations
 
+- Every shipping skill README must include its own copy-paste update command using the exact skill name and explicit project scope (`npx skills@1.7.4 update <skill-name> --project`). State the shell and target application folder, prerequisites, how to verify the installed copy and refresh the agent session, and link the owning installer's alternatives. Add this when creating a skill; keep it accurate when renaming one. For Ultimate QA core/client, also explain the matching kit refresh. A link to the shared update guide alone does not satisfy this requirement.
 - Lead skill installation guidance with the supported direct `npx skills@1.7.4 add` route. Ordinary skills do not require the user to clone or manually download this collection. Preserve the Python installer as an explicitly optional recorded/offline route.
 - State prerequisites before commands: Node.js 22.20+ with npm/npx, network access for remote sources, and Git for repository fallback. Distinguish installer requirements from the selected skill's runtime requirements.
 - Give commands in separate fenced lines. Label shell and starting folder, show actual project-versus-global scope, identify every placeholder to replace, explain agent selection, expected installed files, session refresh, and the separate chat invocation.
