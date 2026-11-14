@@ -2,6 +2,9 @@
 
 ## Unreleased collection 0.1.0
 
+- Require every skill README to cover its full supported user-facing interface, with a source-to-document review when capabilities change.
+- Require substantive, verified commit bodies when implementation-plan auto-commit executes.
+- Add explicit `--auto-commit` to implementation-plan; default commit execution remains off, and package revisions preserve the selected policy.
 - Require detailed, repository-specific implementation-plan commit drafts with explanatory bodies even when commit execution is off; reject subject-only packages in the checker.
 - Add a copy-preserving global reinstall command to every skill update guide.
 - Show global and project update commands as separate alternatives in every skill README.

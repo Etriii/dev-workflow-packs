@@ -12,3 +12,9 @@
 - Preserve the installer's ownership, backups and Markdown-history behavior. Use the installer that owns a copy for update/removal; recommending npx does not migrate existing Python-managed copies or grant permission to install anything.
 - Remote commands use published files, not local unpushed edits. Explain missing/unpublished skill names and local-source alternatives without claiming publication or silently changing sources. No curl-to-shell installer is shipped; do not invent one.
 - Keep READMEs, INSTALL.md, the npx guide, contribution/pack-authoring guidance, relevant skill docs and payload manifests consistent. Follow the command documentation contract in CONTRIBUTING.md and run the relevant checks. Historical evidence keeps its original facts and names.
+
+## Skill README command contract
+
+- Every shipping skill README must document its complete supported user-facing interface from `SKILL.md`, referenced instructions and bundled helpers. Include every command or natural-language action the user can invoke, meaningful flags and arguments, defaults, supported combinations, conflicts and invalid inputs. Do not invent commands that the skill cannot execute.
+- For each action, show a copyable agent-chat request and state prerequisites, project or subject selection, files or services it reads or writes, approval and commit effects, verification, how it resumes, and where it stops. Document terminal setup and helper commands the user must run separately; do not present internal helper flags as chat options. Explain optional automation and read-only modes explicitly.
+- When adding or changing a skill capability, reconcile the skill README and shared command guide against the actual instruction and helper contracts before shipping. Review all affected operations, not just the new example. Static link or keyword checks do not prove this coverage; perform a source-to-README review.

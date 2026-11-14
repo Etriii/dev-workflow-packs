@@ -158,7 +158,7 @@ def validate_options(max_phases, skills, skills_mode, commits, phase_count=None,
         raise ValueError("--max-phases must be positive")
     if phase_count is not None and (phase_count < 1 or (max_phases is not None and phase_count > max_phases)):
         raise ValueError("--phase-count must be positive and within --max-phases")
-    if skills_mode not in ("auto", "all") or commits not in ("off", "scoped"):
+    if skills_mode not in ("auto", "all") or commits not in ("off", "scoped", "auto"):
         raise ValueError("Invalid skills mode or commit policy")
     if test_scope not in ("focused", "full"):
         raise ValueError("--test-scope must be focused or full")
@@ -194,7 +194,7 @@ def pdf_snapshot(path):
     return content
 
 
-def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits="off", previous=None, source_plan=None, phase_count=None, source_document=None, test_scope=None):
+def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits=None, previous=None, source_plan=None, phase_count=None, source_document=None, test_scope=None):
     if source_plan and source_document:
         raise ValueError("Choose one source plan or source PDF")
     root, is_git = project_root(project)
@@ -222,6 +222,8 @@ def start(project, feature, max_phases=None, skills="", skills_mode="auto", comm
         prior = None
     if test_scope is None:
         test_scope = prior.get("test_scope", "focused") if prior else "focused"
+    if commits is None:
+        commits = prior.get("commits", "off") if prior else "off"
     names = validate_options(max_phases, skills, skills_mode, commits, phase_count, test_scope)
     original = None
     source = {"origin": "session"}
@@ -353,6 +355,8 @@ def inspect(package):
     test_scope = data.get("test_scope", "focused")
     if test_scope not in ("focused", "full"):
         errors.append("Invalid test scope")
+    if data.get("commits") not in ("off", "scoped", "auto"):
+        errors.append("Invalid commit policy")
     phases = data.get("phases")
     if not isinstance(phases, dict) or not phases:
         errors.append("No phase prompt map")
@@ -447,7 +451,7 @@ def main(argv=None):
     command.add_argument("--phase-count", type=int)
     command.add_argument("--skills", default="")
     command.add_argument("--skills-mode", choices=("auto", "all"), default="auto")
-    command.add_argument("--commits", choices=("off", "scoped"), default="off")
+    command.add_argument("--commits", choices=("off", "scoped", "auto"))
     command.add_argument("--test-scope", choices=("focused", "full"))
     command.add_argument("--previous")
     command.add_argument("--source-plan")

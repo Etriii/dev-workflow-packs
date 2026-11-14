@@ -318,6 +318,30 @@ class PackageStoreTests(unittest.TestCase):
         (inherited / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
         self.assertIn("Invalid test scope", store.inspect(inherited)["errors"])
 
+    def test_commit_policy_defaults_off_and_auto_survives_revision(self):
+        self.init_git()
+        default = Path(store.start(self.root, "Offer")["package"])
+        self.assertEqual(json.loads((default / ".package.json").read_text())["commits"], "off")
+        auto = Path(store.start(self.root, "Offer", previous=default,
+                                commits="auto")["package"])
+        self.save_complete(auto)
+        self.assertEqual(json.loads((auto / ".package.json").read_text())["commits"], "auto")
+        self.assertEqual(store.inspect(auto)["errors"], [])
+        inherited = Path(store.start(self.root, "Offer", previous=auto)["package"])
+        self.assertEqual(json.loads((inherited / ".package.json").read_text())["commits"], "auto")
+        disabled = Path(store.start(self.root, "Offer", previous=inherited,
+                                    commits="off")["package"])
+        self.assertEqual(json.loads((disabled / ".package.json").read_text())["commits"], "off")
+
+    def test_cli_accepts_auto_commit_policy(self):
+        self.init_git()
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(store.main(["start", "--project", str(self.root),
+                                         "--feature", "Offer", "--commits", "auto"]), 0)
+        package = Path(json.loads(output.getvalue())["package"])
+        self.assertEqual(json.loads((package / ".package.json").read_text())["commits"], "auto")
+
     def test_cli_records_full_test_scope_and_rejects_invalid_value(self):
         self.init_git()
         output = io.StringIO()
