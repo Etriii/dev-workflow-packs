@@ -9,9 +9,11 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "packs/developer-skills/skills/implementation-plan/scripts/package_store.py"
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "packs/developer-skills/skills/implementation-plan/scripts/package_store.py"
 SPEC = spec_from_file_location("implementation_package_store", SCRIPT)
 store = module_from_spec(SPEC)
 sys.modules[SPEC.name] = store
@@ -23,6 +25,10 @@ class PackageStoreTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory(prefix="implementation-plan-test-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
+        self.config = self.root / "user-config.json"
+        config_patch = patch.object(store, "config_path", return_value=self.config)
+        config_patch.start()
+        self.addCleanup(config_patch.stop)
 
     def git(self, *args):
         result = subprocess.run(["git", "-C", str(self.root), *args], capture_output=True, text=True)
@@ -332,6 +338,62 @@ class PackageStoreTests(unittest.TestCase):
         disabled = Path(store.start(self.root, "Offer", previous=inherited,
                                     commits="off")["package"])
         self.assertEqual(json.loads((disabled / ".package.json").read_text())["commits"], "off")
+
+    def test_user_config_applies_to_new_packages_without_changing_revisions(self):
+        self.init_git()
+        config = {
+            "schema_version": 1,
+            "defaults_at_setup": {"commits": "off", "test_scope": "focused", "skills_mode": "auto"},
+            "current": {"commits": "auto", "test_scope": "full", "skills_mode": "all"},
+        }
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        first = Path(store.start(self.root, "Offer")["package"])
+        first_data = json.loads((first / ".package.json").read_text(encoding="utf-8"))
+        self.assertEqual((first_data["commits"], first_data["test_scope"], first_data["skills_mode"]),
+                         ("auto", "full", "all"))
+        config["current"] = {"commits": "off", "test_scope": "focused", "skills_mode": "auto"}
+        self.config.write_text(json.dumps(config), encoding="utf-8")
+        revised = Path(store.start(self.root, "Offer", previous=first)["package"])
+        revised_data = json.loads((revised / ".package.json").read_text(encoding="utf-8"))
+        self.assertEqual((revised_data["commits"], revised_data["test_scope"], revised_data["skills_mode"]),
+                         ("auto", "full", "all"))
+        explicit = Path(store.start(self.root, "Other", commits="scoped", test_scope="full",
+                                    skills_mode="all")["package"])
+        explicit_data = json.loads((explicit / ".package.json").read_text(encoding="utf-8"))
+        self.assertEqual((explicit_data["commits"], explicit_data["test_scope"], explicit_data["skills_mode"]),
+                         ("scoped", "full", "all"))
+        self.config.write_text("not JSON", encoding="utf-8")
+        later_revision = Path(store.start(self.root, "Offer", previous=first)["package"])
+        self.assertEqual(json.loads((later_revision / ".package.json").read_text(encoding="utf-8"))["commits"],
+                         "auto")
+
+    def test_invalid_user_config_stops_before_package_writes(self):
+        self.init_git()
+        self.config.write_text('{"schema_version": 1, "current": {"commits": "auto"}}', encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Invalid implementation-plan config structure"):
+            store.start(self.root, "Offer")
+        self.assertFalse((self.root / store.OUTPUT).exists())
+        self.assertFalse((self.root / ".gitignore").exists())
+        self.config.write_text(json.dumps({
+            "schema_version": 1,
+            "defaults_at_setup": {"commits": "off", "test_scope": "focused", "skills_mode": "auto"},
+            "current": {"commits": "invalid", "test_scope": "focused", "skills_mode": "auto"},
+        }), encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "current.commits"):
+            store.start(self.root, "Offer")
+        self.assertFalse((self.root / store.OUTPUT).exists())
+
+    def test_config_template_is_in_both_agent_copies(self):
+        result = subprocess.run([
+            sys.executable, "-B", str(ROOT / "tools/install_skills.py"),
+            "--pack", "developer-skills", "--agent", "both", "--project", str(self.root),
+            "--skills", "implementation-plan", "--yes",
+        ], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        source = SCRIPT.parent.parent / "assets/config.json"
+        for agent_dir in (".agents", ".claude"):
+            installed = self.root / agent_dir / "skills/implementation-plan/assets/config.json"
+            self.assertEqual(installed.read_bytes(), source.read_bytes())
 
     def test_cli_accepts_auto_commit_policy(self):
         self.init_git()

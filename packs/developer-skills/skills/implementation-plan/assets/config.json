@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "defaults_at_setup": {
+    "commits": "off",
+    "test_scope": "focused",
+    "skills_mode": "auto"
+  },
+  "current": {
+    "commits": "off",
+    "test_scope": "focused",
+    "skills_mode": "auto"
+  }
+}

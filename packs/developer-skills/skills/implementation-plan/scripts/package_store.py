@@ -30,6 +30,36 @@ RUN_ID = re.compile(r"\d{8}T\d{6}Z-[0-9a-f]{12}")
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 COMMIT_BLOCK = re.compile(r"^```(?:text|commit)?[ \t]*\r?\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
 COMMIT_SUBJECT = re.compile(r"^(?:feat|fix|refactor|chore|docs|test|perf|ci)(?:\([^)\r\n]+\))?!?: [^\r\n]+$")
+BUILTIN_SETTINGS = {"commits": "off", "test_scope": "focused", "skills_mode": "auto"}
+SETTING_VALUES = {"commits": ("off", "scoped", "auto"),
+                  "test_scope": ("focused", "full"), "skills_mode": ("auto", "all")}
+
+
+def config_path():
+    return Path.home() / ".config" / "implementation-plan" / "config.json"
+
+
+def user_settings():
+    path = regular(config_path())
+    if not path.exists():
+        return BUILTIN_SETTINGS.copy()
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (UnicodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"Invalid implementation-plan config JSON: {path}: {error}") from error
+    if (not isinstance(data, dict)
+            or set(data) != {"schema_version", "defaults_at_setup", "current"}
+            or type(data["schema_version"]) is not int
+            or data["schema_version"] != 1):
+        raise ValueError(f"Invalid implementation-plan config structure: {path}")
+    for section in ("defaults_at_setup", "current"):
+        values = data[section]
+        if not isinstance(values, dict) or set(values) != set(BUILTIN_SETTINGS):
+            raise ValueError(f"Invalid implementation-plan config {section}: {path}")
+        for name, value in values.items():
+            if value not in SETTING_VALUES[name]:
+                raise ValueError(f"Invalid implementation-plan config {section}.{name}: {path}")
+    return data["current"].copy()
 
 
 def safe(path):
@@ -194,7 +224,7 @@ def pdf_snapshot(path):
     return content
 
 
-def start(project, feature, max_phases=None, skills="", skills_mode="auto", commits=None, previous=None, source_plan=None, phase_count=None, source_document=None, test_scope=None):
+def start(project, feature, max_phases=None, skills="", skills_mode=None, commits=None, previous=None, source_plan=None, phase_count=None, source_document=None, test_scope=None):
     if source_plan and source_document:
         raise ValueError("Choose one source plan or source PDF")
     root, is_git = project_root(project)
@@ -220,10 +250,13 @@ def start(project, feature, max_phases=None, skills="", skills_mode="auto", comm
         slug = slugify(feature) + "-implementation"
         prior_package = None
         prior = None
+    defaults = None if prior else user_settings()
     if test_scope is None:
-        test_scope = prior.get("test_scope", "focused") if prior else "focused"
+        test_scope = prior.get("test_scope", "focused") if prior else defaults["test_scope"]
     if commits is None:
-        commits = prior.get("commits", "off") if prior else "off"
+        commits = prior.get("commits", "off") if prior else defaults["commits"]
+    if skills_mode is None:
+        skills_mode = prior.get("skills_mode", "auto") if prior else defaults["skills_mode"]
     names = validate_options(max_phases, skills, skills_mode, commits, phase_count, test_scope)
     original = None
     source = {"origin": "session"}
@@ -450,7 +483,7 @@ def main(argv=None):
     command.add_argument("--max-phases", type=int)
     command.add_argument("--phase-count", type=int)
     command.add_argument("--skills", default="")
-    command.add_argument("--skills-mode", choices=("auto", "all"), default="auto")
+    command.add_argument("--skills-mode", choices=("auto", "all"))
     command.add_argument("--commits", choices=("off", "scoped", "auto"))
     command.add_argument("--test-scope", choices=("focused", "full"))
     command.add_argument("--previous")

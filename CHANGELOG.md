@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Add optional user-local implementation-plan defaults with a setup baseline for comparison, concise resolved-setting disclosure, and saved package policies that remain stable after config edits.
 - Require every skill README to cover its full supported user-facing interface, with a source-to-document review when capabilities change.
 - Require substantive, verified commit bodies when implementation-plan auto-commit executes.
 - Add explicit `--auto-commit` to implementation-plan; default commit execution remains off, and package revisions preserve the selected policy.
