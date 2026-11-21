@@ -6,7 +6,7 @@ Install directly with `npx skills` using Node.js 22.20+ and npm; ordinary skills
 
 | Pack | Skills | Purpose |
 |---|---:|---|
-| [Developer Skills](packs/developer-skills/README.md) | 32 | Prompt intake, implementation packages, planning, UI/UX and mobile improvements, reports, system settings, reviews and handoff |
+| [Developer Skills](packs/developer-skills/README.md) | 33 | Prompt intake, implementation packages, planning, UI/UX and mobile improvements, reports, system settings, reviews and handoff |
 | [Ultimate QA](packs/ultimate-qa/README.md) | 9 | Versioned QA reviews, specialist checks and optional client documents |
 
 Each skill has a README covering its purpose, installation, usage and prerequisites. Browse the [skill catalog](SKILL_CATALOG.md) or read [CONTRIBUTING.md](CONTRIBUTING.md) to contribute.

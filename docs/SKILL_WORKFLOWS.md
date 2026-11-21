@@ -62,6 +62,7 @@ Select a helper according to the authorized work. Diagnose an unclear failure fi
 | Task | Optional helper |
 |---|---|
 | Unclear or intermittent failure | `investigate-first` |
+| One or several reported bugs needing a role/page cause report, optional fix, or follow-up verification | `bug-investigation` |
 | New feature | `lean-build` |
 | Runtime settings discovery, design, implementation or verification | `system-settings` |
 | Specific defect or small behavior change | `surgical-patch` |

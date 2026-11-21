@@ -1,6 +1,6 @@
 # Developer Skills pack
 
-Thirty-two independent skills for prompt intake, implementation packages, planning, UI/UX and mobile review, reports, system settings, implementation, generic critique, development reviews, delivery checks and handoff. Each README and metadata file is included in the payload manifest. No private runner, Docker or API key is required. The Python installer works offline once the source is downloaded.
+Thirty-three independent skills for prompt intake, implementation packages, planning, UI/UX and mobile review, reports, system settings, implementation, generic critique, development reviews, delivery checks and handoff. Each README and metadata file is included in the payload manifest. No private runner, Docker or API key is required. The Python installer works offline once the source is downloaded.
 
 This pack belongs to [Dev Workflow Packs](../../README.md). Each skill has its own README with installation, usage and prerequisites.
 
@@ -37,7 +37,7 @@ python tools/install_skills.py --pack developer-skills --agent both --project "D
 python tools/install_skills.py --pack developer-skills --agent both --project "D:\My App" --bundle essential
 ```
 
-Essential contains plan-review, blocker-check, phase-handoff and completion-check. Use `--skills blocker-check` for one or `--bundle all` explicitly for all 32. Installation executes no skill. The pack-local `tools/install_skills.py` is an entry point to the same collection tool.
+Essential contains plan-review, blocker-check, phase-handoff and completion-check. Use `--skills blocker-check` for one or `--bundle all` explicitly for all 33. Installation executes no skill. The pack-local `tools/install_skills.py` is an entry point to the same collection tool.
 
 The [installation guide](../../INSTALL.md) covers user scope, integrity, matching-copy adoption, backup replacement and recovery. The [removal guide](../../UNINSTALL.md) gives tracked uninstall/reinstall commands. Completed changing operations create scoped Markdown history; removal preserves records and content backups.
 
@@ -68,6 +68,7 @@ Read [SKILL_CATALOG.md](SKILL_CATALOG.md) for selection and [docs/SKILL_STANDARD
 | [prompt-intake](skills/prompt-intake/README.md) | Clarify a task with recommended choices, custom answers, versioned question files and next-action hints. |
 | [report-builder](skills/report-builder/README.md) | Discover reporting needs and build scoped report pages with styled PDF and Excel exports and retained generated files. |
 | [change-report](skills/change-report/README.md) | Explain completed Git changes by role or page, with optional source and verification evidence. |
+| [bug-investigation](skills/bug-investigation/README.md) | Investigate reported bugs, optionally fix and verify them, and report by role or page. |
 | [safe-refactor](skills/safe-refactor/README.md) | Restructure code while preserving defined behavior and contracts. |
 | [security-privacy-review](skills/security-privacy-review/README.md) | Trace trust boundaries, permissions and data handling for a scoped change. |
 | [surgical-patch](skills/surgical-patch/README.md) | Fix a specific defect with focused regression evidence. |

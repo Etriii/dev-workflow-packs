@@ -59,6 +59,7 @@ Choose a helper for the authorized type of work. These skills work independently
 | Skill | Purpose | Install pack |
 |---|---|---|
 | [investigate-first](packs/developer-skills/skills/investigate-first/README.md) | Diagnose unclear failures using reproduction and competing evidence before proposing edits. | `developer-skills` |
+| [bug-investigation](packs/developer-skills/skills/bug-investigation/README.md) | Investigate reported bugs, optionally fix and verify them, and report causes by role or page. | `developer-skills` |
 | [lean-build](packs/developer-skills/skills/lean-build/README.md) | Implement a bounded feature through existing owners with focused verification. | `developer-skills` |
 | [migration](packs/developer-skills/skills/migration/README.md) | Make compatibility-sensitive transitions with preservation and recovery evidence. | `developer-skills` |
 | [report-builder](packs/developer-skills/skills/report-builder/README.md) | Discover reporting needs and implement scoped reports with styled PDF and Excel exports and retained generated files. | `developer-skills` |

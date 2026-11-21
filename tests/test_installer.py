@@ -30,7 +30,7 @@ NAMES = {
     "frontend-review", "backend-review", "database-review", "security-privacy-review",
     "business-rules-review", "delivery-readiness", "critical-review", "deep-critique", "prompt-intake", "implementation-plan",
     "investigate-first", "lean-build", "surgical-patch", "safe-refactor", "migration", "verify-and-stop",
-    "report-builder", "change-report", "system-settings",
+    "report-builder", "change-report", "bug-investigation", "system-settings",
     "table-ux-review",
     "ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile",
 }
@@ -45,7 +45,7 @@ class CatalogTests(unittest.TestCase):
                 path = skill.path
                 metadata = catalog.validate_skill(path)
                 self.assertEqual(metadata["skill_id"], name)
-                expected_agents = [] if name in {"report-builder", "change-report", "system-settings", "implementation-plan", "table-ux-review", "ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile"} else ["codex", "claude"]
+                expected_agents = [] if name in {"report-builder", "change-report", "bug-investigation", "system-settings", "implementation-plan", "table-ux-review", "ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile"} else ["codex", "claude"]
                 self.assertEqual(metadata["compatible_agents"], expected_agents)
                 expected_files = {"SKILL.md", "README.md", "metadata.toml"}
                 if name == "deep-critique":
@@ -57,6 +57,8 @@ class CatalogTests(unittest.TestCase):
                     }
                 elif name == "change-report":
                     expected_files |= {"scripts/change_report.py", "references/report-format.md", "assets/brief.md", "assets/detailed.md"}
+                elif name == "bug-investigation":
+                    expected_files |= {"scripts/bug_investigation.py", "references/report-format.md", "references/repository-evidence.md", "assets/brief.md", "assets/detailed.md"}
                 elif name == "system-settings":
                     expected_files |= {"references/discovery.md", "references/implementation.md"}
                 elif name == "implementation-plan":
@@ -136,6 +138,22 @@ class InstallerTests(unittest.TestCase):
             target = self.target("change-report", agent)
             self.assertEqual(catalog.files_in(target), catalog.files_in(source))
             self.assertTrue((target / "scripts/change_report.py").is_file())
+            self.assertTrue((target / "assets/brief.md").is_file())
+            self.assertTrue((target / "assets/detailed.md").is_file())
+
+    def test_selected_bug_investigation_is_self_contained_for_both_agents(self):
+        with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+            result = install_skills.main([
+                "--agent", "both", "--project", str(self.project),
+                "--skills", "bug-investigation", "--yes",
+            ])
+        self.assertEqual(result, 0)
+        source = ROOT / "skills/bug-investigation"
+        for agent in (".agents", ".claude"):
+            target = self.target("bug-investigation", agent)
+            self.assertEqual(catalog.files_in(target), catalog.files_in(source))
+            self.assertTrue((target / "scripts/bug_investigation.py").is_file())
+            self.assertTrue((target / "references/report-format.md").is_file())
             self.assertTrue((target / "assets/brief.md").is_file())
             self.assertTrue((target / "assets/detailed.md").is_file())
 

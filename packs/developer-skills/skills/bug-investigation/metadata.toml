@@ -1,0 +1,8 @@
+schema_version = 1
+skill_id = "bug-investigation"
+name = "bug-investigation"
+version = "0.1.0"
+capabilities = ["bug-diagnosis", "scoped-fixes", "follow-up-verification", "multi-repository-evidence"]
+compatible_agents = []
+license_status = "UNDECIDED"
+provenance = "local-authored"
