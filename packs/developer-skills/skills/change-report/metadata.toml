@@ -1,0 +1,8 @@
+schema_version = 1
+skill_id = "change-report"
+name = "change-report"
+version = "0.1.0"
+capabilities = ["change-walkthrough", "git-scope-inspection", "session-baselines", "multi-repository-reporting"]
+compatible_agents = []
+license_status = "UNDECIDED"
+provenance = "local-authored"

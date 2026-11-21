@@ -30,6 +30,7 @@ Version 0.1.0; each stable skill ID equals its generic directory/frontmatter nam
 | [investigate-first](skills/investigate-first/README.md) | Evidence-led diagnosis before code changes | Task helper |
 | [lean-build](skills/lean-build/README.md) | Bounded feature implementation through existing owners | Task helper |
 | [report-builder](skills/report-builder/README.md) | Reporting discovery, styled exports, scoped access and retained files | Read-only scan |
+| [change-report](skills/change-report/README.md) | Completed-change walkthroughs from Git, sessions, plans and multiple repositories | Brief report |
 | [system-settings](skills/system-settings/README.md) | Runtime settings necessity, category loading, scoped implementation and audit reuse | Read-only scan |
 | [surgical-patch](skills/surgical-patch/README.md) | Root-cause correction and focused regression proof | Task helper |
 | [safe-refactor](skills/safe-refactor/README.md) | Structural change with behavior-preservation proof | Task helper |
