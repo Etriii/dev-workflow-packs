@@ -37,7 +37,7 @@ Remote commands use the published source; local unpushed changes are not availab
 
 ## Update installed skills
 
-Use the installer that owns each copy and save custom edits first. For npx-managed copies, follow the [project/global update commands](docs/NPX_INSTALLATION.md#update-npx-managed-skills), including single-skill selection, explicit-agent/copy reinstallation and matching QA kit refresh. Remote updates use the published recorded source/ref, not local unpushed edits. Updating files does not run the skill; refresh the coding-agent session before a separate chat invocation.
+Use the installer that owns each copy and save custom edits first. To update only npx-managed copies recorded from this collection, use the [source-filtered project and global commands](README.md#update-installed-skills-with-npx). The [general npx update guide](docs/NPX_INSTALLATION.md#update-npx-managed-skills) also covers all-source updates, single-skill selection, explicit-agent/copy reinstallation and matching QA kit refresh. Remote updates use the published recorded source/ref, not local unpushed edits. Updating files does not run the skill; refresh the coding-agent session before a separate chat invocation.
 
 If an existing npx lock records `Etriii/agent-skills`, GitHub's repository redirect should keep that source reachable after the rename. Check the update result and installed destination. If the old source fails, use the documented selected `add` command with `Etriii/dev-workflow-packs`, the same scope and agent selection, and `--copy` if the original install used copies. Do not treat a skipped update as success. The [rename guidance](docs/NPX_INSTALLATION.md#repository-rename-and-existing-installs) covers both installers.
 

@@ -1,6 +1,7 @@
 """Exercise implementation package storage in disposable projects."""
 
 from contextlib import redirect_stdout, redirect_stderr
+from datetime import datetime, timezone
 from importlib.util import module_from_spec, spec_from_file_location
 import io
 import json
@@ -78,6 +79,28 @@ class PackageStoreTests(unittest.TestCase):
         self.assertEqual(json.loads((next_package / ".package.json").read_text())["previous"], str(package))
         self.assertTrue((package / "PLAN.md").exists())
         self.assertEqual((self.root / ".gitignore").read_bytes(), b"/.implementation-plans/\n")
+
+    def test_feature_folders_sort_by_creation_time_and_revisions_keep_their_folder(self):
+        with patch.object(store, "datetime") as clock:
+            clock.now.return_value = datetime(2026, 11, 20, 6, 37, 18, tzinfo=timezone.utc)
+            first = Path(store.start(self.root, "Queue and Operations")["package"])
+            clock.now.return_value = datetime(2026, 11, 21, 8, 10, 5, tzinfo=timezone.utc)
+            second = Path(store.start(self.root, "Hiring")["package"])
+            revision = Path(store.start(self.root, "Ignored title", previous=first)["package"])
+        self.assertEqual(first.parent.name, "20261120T063718Z-queue-and-operations")
+        self.assertEqual(second.parent.name, "20261121T081005Z-hiring")
+        self.assertLess(first.parent.name, second.parent.name)
+        self.assertEqual(revision.parent, first.parent)
+
+    def test_existing_feature_folder_name_remains_revisable(self):
+        current = Path(store.start(self.root, "Queue and Operations")["package"])
+        old_folder = current.parent.with_name("queue-and-operations-implementation")
+        current.parent.rename(old_folder)
+        old_package = old_folder / current.name
+        self.assertEqual(store.locate(old_package)[2], old_package)
+        revision = Path(store.start(self.root, "Ignored title", previous=old_package)["package"])
+        self.assertEqual(revision.parent, old_folder)
+        self.assertTrue(old_package.exists())
 
     def test_existing_tracked_docs_are_untouched(self):
         self.init_git()
@@ -212,20 +235,25 @@ class PackageStoreTests(unittest.TestCase):
     def test_ignore_exception_gets_effective_final_rule(self):
         self.init_git()
         (self.root / store.OUTPUT).mkdir()
-        original = b"/.implementation-plans/*\n!/.implementation-plans/hiring-implementation/\n"
+        original = b"/.implementation-plans/*\n!/.implementation-plans/20261120T063718Z-hiring/\n"
         (self.root / ".gitignore").write_bytes(original)
-        package = Path(store.start(self.root, "Hiring")["package"])
+        with patch.object(store, "datetime") as clock:
+            clock.now.return_value = datetime(2026, 11, 20, 6, 37, 18, tzinfo=timezone.utc)
+            package = Path(store.start(self.root, "Hiring")["package"])
         self.assertEqual((self.root / ".gitignore").read_bytes(), original + b"/.implementation-plans/\n")
         self.assertEqual(store.inspect(package)["git_exclusion_verified"], True)
 
     def test_unowned_name_gets_unique_folder_and_tracked_output_is_refused(self):
         self.init_git()
         store.start(self.root, "Roster")
-        existing = self.root / store.OUTPUT / "hiring-implementation"
+        existing = self.root / store.OUTPUT / "20261120T063718Z-hiring"
         existing.mkdir(parents=True)
         (existing / "existing.txt").write_text("unrelated")
-        first = Path(store.start(self.root, "Hiring")["package"])
+        with patch.object(store, "datetime") as clock:
+            clock.now.return_value = datetime(2026, 11, 20, 6, 37, 18, tzinfo=timezone.utc)
+            first = Path(store.start(self.root, "Hiring")["package"])
         self.assertNotEqual(first.parent, existing)
+        self.assertTrue(first.parent.name.startswith(existing.name + "-"))
         self.assertEqual((existing / "existing.txt").read_text(), "unrelated")
         self.git("add", "-f", first.parent.relative_to(self.root).as_posix() + "/.implementation-plan.json")
         with self.assertRaisesRegex(ValueError, "tracked"):

@@ -144,7 +144,7 @@ Update all tracked skills in that project:
 npx skills@1.7.4 update --project
 ```
 
-This includes tracked skills from other sources, not only this collection. To update only one installed skill, choose this alternative; replace `system-settings` with its exact installed name:
+This includes tracked skills from other sources, not only this collection. For all installed skills recorded from Dev Workflow Packs only, use the [source-filtered project and global commands](../README.md#update-installed-skills-with-npx). To update only one installed skill, choose this alternative; replace `system-settings` with its exact installed name:
 
 ```powershell
 npx skills@1.7.4 update system-settings --project
@@ -158,7 +158,7 @@ For existing global installations, choose this alternative. PowerShell, from any
 npx skills@1.7.4 update --global
 ```
 
-That command updates all tracked global skills, including other sources. A project-scoped command reports no match when the skill exists only globally. To select only one global skill:
+That command updates all tracked global skills, including other sources. Use the [source-filtered commands](../README.md#update-installed-skills-with-npx) when other sources must remain untouched. A project-scoped command reports no match when the skill exists only globally. To select only one global skill:
 
 ```powershell
 npx skills@1.7.4 update system-settings --global

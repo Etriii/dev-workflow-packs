@@ -247,7 +247,7 @@ def start(project, feature, max_phases=None, skills="", skills_mode=None, commit
         feature = prior["feature"]
         slug = prior_package.parent.name
     else:
-        slug = slugify(feature) + "-implementation"
+        slug = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ-") + slugify(feature)
         prior_package = None
         prior = None
     defaults = None if prior else user_settings()

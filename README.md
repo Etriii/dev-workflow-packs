@@ -56,22 +56,44 @@ The external CLI owns its prompts, security assessments and lock files. Its inst
 
 ## Update installed skills with npx
 
-Prerequisites: Node.js 22.20+ with npm/npx, network access to npm and each recorded remote source, and Git for repository fallback. Save custom edits first. These PowerShell commands update existing npx-managed skills; they do not install missing skills or update Python-managed copies. Remote updates use the recorded source/ref, so local unpushed changes are not included.
+Prerequisites: Node.js 22.20+ with npm/npx, network access to npm and the recorded GitHub source, and Git for repository fallback. Save custom edits first. These PowerShell commands select only existing npx-managed skills whose lock entry names `Etriii/dev-workflow-packs` or its former name `Etriii/agent-skills`. They do not install missing skills or update Python-managed copies. Remote updates use the recorded source/ref, so local unpushed changes are not included.
 
-For project copies, start in the original application folder. Replace `D:\My App` with that folder and run each line separately:
+For project copies, start in the original application folder. Replace `D:\My App` with that folder, then run these selection lines in PowerShell:
 
 ```powershell
 Set-Location 'D:\My App'
-npx skills@1.7.4 update --project
+$skillLockPath = '.agents/.skill-lock.json'
+if (-not (Test-Path -LiteralPath $skillLockPath)) { throw 'No npx project skill lock found.' }
+$skillLock = Get-Content -LiteralPath $skillLockPath -Raw | ConvertFrom-Json
+$packSkills = @($skillLock.skills.PSObject.Properties | Where-Object { $_.Value.sourceType -eq 'github' -and $_.Value.source -in @('Etriii/dev-workflow-packs', 'Etriii/agent-skills') } | ForEach-Object Name)
+if ($packSkills.Count -eq 0) { throw 'No Dev Workflow Packs skills found in the project lock.' }
+$packSkills
 ```
 
-For global copies, start in any PowerShell folder:
+After checking the printed names, run this line in the same PowerShell session:
 
 ```powershell
-npx skills@1.7.4 update --global
+npx skills@1.7.4 update @packSkills --project
 ```
 
-Run both scopes if you have copies in both. With no skill name, these commands update **all tracked npx-managed skills in that scope**, including skills from other sources; CLI 1.7.4 has no source filter for this operation. Review the CLI summary and confirm the installed skill files at the reported destinations, then refresh the agent session before invoking a skill in chat. The updater does not preserve explicit `--agent` or `--copy` choices; use the [selected reinstall alternatives](docs/NPX_INSTALLATION.md#update-npx-managed-skills) when those choices matter. Python-managed copies use [recorded replacement](INSTALL.md#existing-copies-and-replacement). Ultimate QA core/client copies also need a [matching durable kit](docs/NPX_INSTALLATION.md#ultimate-qa-support-files).
+For global copies, start in any PowerShell folder and run these selection lines:
+
+```powershell
+$skillLockPath = Join-Path $env:USERPROFILE '.agents/.skill-lock.json'
+if (-not (Test-Path -LiteralPath $skillLockPath)) { throw 'No npx global skill lock found.' }
+$skillLock = Get-Content -LiteralPath $skillLockPath -Raw | ConvertFrom-Json
+$packSkills = @($skillLock.skills.PSObject.Properties | Where-Object { $_.Value.sourceType -eq 'github' -and $_.Value.source -in @('Etriii/dev-workflow-packs', 'Etriii/agent-skills') } | ForEach-Object Name)
+if ($packSkills.Count -eq 0) { throw 'No Dev Workflow Packs skills found in the global lock.' }
+$packSkills
+```
+
+After checking the printed names, run this line in the same PowerShell session:
+
+```powershell
+npx skills@1.7.4 update @packSkills --global
+```
+
+Run both scopes if you have copies in both. Only the selected names are passed to the updater. CLI 1.7.4 has no source-filter flag, and its unqualified `update --project` or `update --global` would also update skills from other sources. The commands above select GitHub-sourced copies of this collection; a copy installed from a local path needs a separately selected update using its recorded source. Review the CLI summary and confirm the installed skill files at the reported destinations, then refresh the agent session before invoking a skill in chat. The updater does not preserve explicit `--agent` or `--copy` choices; use the [selected reinstall alternatives](docs/NPX_INSTALLATION.md#update-npx-managed-skills) when those choices matter. Python-managed copies use [recorded replacement](INSTALL.md#existing-copies-and-replacement). Ultimate QA core/client copies also need a [matching durable kit](docs/NPX_INSTALLATION.md#ultimate-qa-support-files).
 
 ## Optional local download or checkout
 
