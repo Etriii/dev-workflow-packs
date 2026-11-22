@@ -8,6 +8,8 @@ Prioritize workflows with a reporting audience and recurring decisions: transact
 
 Cross-check discovered candidates against existing definitions, registry entries, queries, report buttons, dashboards, and exports before declaring a gap. A missing button may be an integration gap rather than a missing report.
 
+Place entry points where each authorized audience already works: a Reports destination in its existing navigation when a catalog is useful, contextual report actions beside relevant feature lists or dashboards, and a builder reached from those entry points. Reuse suitable pages and components. After an export request is accepted, expose its durable status and a clear route to Generated Reports; the originating page may also show inline status. Keep report choices, preview, and downloads discoverable without copying another application's sidebar or page layout.
+
 Use one inventory row per candidate:
 
 | Feature/workflow and source | Audience and decision | Existing report/export | Classification and evidence | Data/query owner | Scope/permission boundary | Gap and next action |

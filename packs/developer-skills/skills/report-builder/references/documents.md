@@ -8,6 +8,10 @@ Show the validated effective filters in both formats, including applied defaults
 
 Only include scope and preparer metadata permitted for that audience. Do not print secrets or private query tokens. Keep the displayed filter description aligned with the actual authorized queries and renderers.
 
+## Screen preview
+
+Present the selected report's cover information, contents, summary, sections, and record samples in the same logical order and with the same names, filters, counts, and color meanings as its PDF. Show any preview or PDF row cap as `Showing X of Y` while keeping full-population totals visible. Mark the preview stale when its report, scope, filters, sections, or columns change, and offer a way to refresh it. If generating the file runs a fresh query, say that its values may differ from the earlier preview. An HTML preview is a readable guide to the document, not proof of PDF pagination or print layout; inspect the rendered PDF separately.
+
 ## Full-report PDF
 
 1. Cover on page one: system and organization name, available logo, report title, reporting period, audience/scope, permitted preparer identity/role, generated date/time/time zone, report reference, section count and accurately labelled record count. Omit unavailable optional contact details rather than inventing them.
@@ -50,6 +54,8 @@ Fill status/type cells using the same owned mappings as PDF and screen. Freeze t
 ## Reference patterns and adaptation
 
 BALE illustrates shared report definitions, a server-scoped catalog, grouped counts/colors, full-row workbook exports, and queued retained files. Its PDF combines contents and summary and its workbook starts with Summary; adapt those renderers to the separate front matter specified above.
+
+When a BALE checkout is available, use these paths relative to its root as optional source examples, checking the current version before relying on them: `bale_admin/src/core/navigation.ts` and `bale_admin/src/pages/reports/presentation/views/` (`ReportsView.vue`, `ReportBuilderView.vue`) for navigation and builder placement; `bale_admin/src/pages/reports/presentation/components/` (`ReportButton.vue`, `ReportPreview.vue`, `MyExportsCard.vue`) for contextual actions, screen preview and retained-file access; `bale_backend_api/app/modules/reports/` (`registry.py`, `services.py`, `builder.py`, `export_service.py`, `jobs.py`, `render_pdf.py`, `render_xlsx.py`) for the catalog, scoped preview, queued export and renderers. BALE's My exports card, combined PDF contents/summary, Summary-first workbook, and retention policy are examples to evaluate, not required layouts or defaults.
 
 LMS illustrates a separate cover/contents/summary, record cards, shared palettes, summary counts by kind, workbook section links, Breakdowns, and Reading Notes. Neither example requires adopting its backend framework, branding, retention values, or creator-only sharing policy.
 

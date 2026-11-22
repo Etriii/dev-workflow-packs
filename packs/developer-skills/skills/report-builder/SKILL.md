@@ -62,6 +62,7 @@ Neither mode may omit PDF or actual `.xlsx` support, clean document structure, a
 
 - One explicit reporting specification defines audience, record grain, date semantics, filters, metrics, sections, columns, colors, and export limits. Resolve material business or sharing-policy uncertainty before dependent implementation; continue independent work.
 - Preview, totals, PDF, and Excel use the same validated semantics and authorized scope. Declare whether separate requests refresh the data; never promise a frozen snapshot merely because they share a builder.
+- Place report entry points in the target application's existing role-aware navigation and relevant feature pages. Reuse a suitable report catalog and builder; make Generated Reports easy to reach from accepted jobs. A screen preview follows the selected document's section order and labels, shows row limits, and visibly marks changed selections as stale. A screen preview does not replace inspection of the rendered PDF.
 - Inspect real roles and effective permissions. Derive tenant/store/branch/self boundaries on the server. The same role across different scopes never grants shared data access.
 - Both exports disclose effective filters and generation time. Color-coded status/type labels and grouped counts use the target's established meanings consistently.
 - Full-report PDF order is cover, contents starting on page two, summary on a separate following page, then sections. Excel uses Cover, Contents, Summary, Breakdowns, record sheets, and Reading Notes with native spreadsheet usability.

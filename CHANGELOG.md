@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Clarify report-builder placement in existing navigation and feature pages, screen-preview parity and limits, and BALE's optional source examples.
 - Require English responses and generated reports from every shipping skill, including requests written in Tagalog or Bisaya.
 - Add request-review for application-grounded informal request and PDF intake, decision records, summaries and implementation-plan handoffs.
 - Add optional user-local implementation-plan defaults with a setup baseline for comparison, concise resolved-setting disclosure, and saved package policies that remain stable after config edits.

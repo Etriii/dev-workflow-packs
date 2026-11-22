@@ -108,6 +108,8 @@ Mid reports contain core figures, meaningful status/type counts, essential recor
 
 PDFs start with a system/organization cover, contents from page two, then a separate summary and report sections. Workbooks use Cover, Contents, Summary, Breakdowns, record sheets, and Reading Notes. Status/type colors follow the application's palette across screen and exports; counts reflect the full matching scope.
 
+The agent places report links in the application's existing role-aware navigation and relevant feature pages, reusing a suitable catalog and builder. The screen preview follows the document's logical order, exposes row limits and stale selections, and links the accepted export flow to Generated Reports. It is not a rendered-PDF check. BALE is an optional source example for these patterns; its exact UI placement, combined PDF contents/summary, Summary-first workbook and retention policy are not copied by default. See [document design and BALE source map](references/documents.md#reference-patterns-and-adaptation) and [discovery and placement](references/discovery-and-metrics.md#establish-coverage).
+
 A dedicated Generated Reports page lists files available to their authorized audiences. Default availability is 24 hours from successful generation, configurable through backend settings or environment configuration. Shared downloads require access to every included section, record scope, and field; matching role names alone are insufficient.
 
 Read the [agent instructions](SKILL.md) for command boundaries and linked discovery, document, access, lifecycle, and verification guidance.

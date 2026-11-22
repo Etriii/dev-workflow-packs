@@ -9,6 +9,7 @@ Cross-check routes/navigation, roles, workflows, existing registries, and source
 Trace representative metrics back to authoritative records. Test date/time-zone boundaries, empty results, unknown and zero-count categories, duplicate joins, cancellations/reversals, money rounding, exclusive status reconciliation, overlapping tags, and cross-section counting units as relevant. Verify full-population counts even when preview/PDF rows are capped.
 
 Changing filters/sections/columns/scope must make an old preview visibly stale. Confirm effective defaults and readable filter descriptions match queries and exports. Check clear behavior for unsupported list filters.
+Check that authorized users can find the report through existing navigation or relevant feature actions, move from catalog to builder and from an accepted export to Generated Reports, and return after navigation or reload. Compare screen preview order, labels, filters, counts, color meanings, and cap notices with the generated document. Inspect the actual rendered PDF for page layout; an HTML preview alone cannot establish it.
 
 ## Access and retained artifacts
 
