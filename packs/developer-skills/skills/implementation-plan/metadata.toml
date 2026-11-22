@@ -1,8 +1,8 @@
 schema_version = 1
 skill_id = "implementation-plan"
 name = "implementation-plan"
-version = "0.5.0"
-capabilities = ["implementation-planning", "plan-file-input", "pdf-requirements-input", "phase-prompts", "plan-revision", "bounded-implementation", "test-scope-selection"]
+version = "0.6.0"
+capabilities = ["implementation-planning", "plan-file-input", "pdf-requirements-input", "phase-prompts", "plan-revision", "test-scope-selection"]
 compatible_agents = []
 license_status = "UNDECIDED"
 provenance = "local-authored"

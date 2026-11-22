@@ -14,7 +14,7 @@ Public skills work without PhasePilot. Use these stages when the corresponding n
 |---|---|---|
 | The task needs clarification | `prompt-intake` | Versioned questions, recommendations, custom answers and a concrete next action. |
 | Informal feedback or a PDF needs application-grounded review before planning | `request-review` | Categorized requests, current-behavior evidence, decisions and an optional reviewed-requirements handoff. |
-| A Markdown plan, PDF requirements brief or new task needs questions and an implementation choice | `implementation-plan` | Choose a phase count, then implement a bounded scope, prepare an ignored package, or prepare it and start the first phase. |
+| A Markdown plan, PDF requirements brief or new task needs detailed planning | `implementation-plan` | Choose a phase count, then present the detailed plan in chat or prepare an ignored package. Application execution needs a later request naming the package and phase. |
 | An implementation plan needs review | `plan-review`; optionally `critical-review` or `deep-critique` | Coverage, dependency findings and justified changes. Choose a short planning challenge or a broader assessment as needed. |
 | Decisions or technical risks remain | `blocker-check` and relevant engineering reviewers | Evidence-linked blockers and decisions before dependent implementation. |
 | Execution prerequisites need checking | `environment-doctor` | Available tools, services, Git state and explicit missing prerequisites. |
