@@ -2,7 +2,7 @@
 
 ## Brief
 
-Use short role sections with page/route bullets, or page sections with applicable roles beside the page. Choose whichever reduces repetition, unless `--group` fixes the choice. A route must come from inspected code. Use hyphens as list markers and separators. Put non-page changes in a small Configuration, Database or Maintenance section. Omit empty sections and stock introductions.
+Use short role sections with page/URL bullets, or page sections with applicable roles beside the page. Choose whichever reduces repetition, unless `--group` fixes the choice. Every viewable change needs a verified application-relative URL beginning with `/`, such as `/queue-system`, in brief and detailed output. Keep required query strings or fragments; identify required route parameters if a concrete value is unavailable. Verify URLs against routes and navigation in the selected code. If a viewable URL cannot be established, write `URL unverified` and explain why. For a change without an application view, say that no viewable URL applies in its Configuration, Database or Maintenance section. Use hyphens as list markers and separators. Omit empty sections and stock introductions.
 
 Illustrative wording only, never evidence for a real project:
 
