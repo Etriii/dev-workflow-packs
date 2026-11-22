@@ -22,6 +22,8 @@ $implementation-plan "<requirements-file.pdf>" --project "<project-path>"
 
 The skill reads the PDF as source requirements, checks unclear or conflicting details, asks questions, and forms a working plan from the answers. If the PDF already contains a plan, it can use that plan instead. It will not treat a requirements brief as an approved implementation plan.
 
+For the optional `$request-review` → `$plan-review` sequence, provide the full reviewed-requirements Markdown as this skill's source and include the plan-review findings in the same conversation or alongside the file. The short client summary alone does not preserve all acceptance, dependencies and evidence. The skill rechecks current source and asks its own phase-sizing and output questions; prior review or client confirmation does not authorize implementation.
+
 You may put options before the plan path if that reads more naturally. This is an alternative chat request:
 
 ```text

@@ -67,7 +67,7 @@ Read [SKILL_CATALOG.md](SKILL_CATALOG.md) for selection and [docs/SKILL_STANDARD
 | [frontend-review](skills/frontend-review/README.md) | Review UI state ownership, forms, accessibility and responsive behavior with explicit evidence limits. |
 | [phase-handoff](skills/phase-handoff/README.md) | Write a standalone Markdown handoff connecting scope, decisions, Git state and executed checks. |
 | [phase-runner](skills/phase-runner/README.md) | Execute one authorized ready phase with checkpoints, verification and a bounded handoff. |
-| [plan-review](skills/plan-review/README.md) | Review complete-plan coverage, dependencies and existing implementation before development. |
+| [plan-review](skills/plan-review/README.md) | Assess reviewed requests or draft plans for solution value, coverage and readiness before planning or development. |
 | [prompt-intake](skills/prompt-intake/README.md) | Clarify a task with recommended choices, custom answers, versioned question files and next-action hints. |
 | [report-builder](skills/report-builder/README.md) | Discover reporting needs and build scoped report pages with styled PDF and Excel exports and retained generated files. |
 | [change-report](skills/change-report/README.md) | Explain completed Git changes by role or page, with optional source and verification evidence. |

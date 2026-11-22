@@ -156,6 +156,7 @@ Leave account management out and summarize again.
 Change REQ-03 to option 2.
 Use your recommendations for the questions shown.
 Save this review.
+Review this scope with plan-review before implementation planning.
 Use this reviewed scope with implementation-plan.
 Implement REQ-01 and REQ-03.
 ```
@@ -164,13 +165,21 @@ Natural filtering preserves excluded IDs and their source history. The agent exp
 
 Normal review creates no files. “Save this review” or a fresh-session handoff writes `reviewed-requirements.md`, `review-state.json` and an appropriate byte-preserved PDF under a unique `.request-reviews/YYYYMMDDTHHMMSSZ-<unique-id>/` in the target workspace. It preserves revisions and source mappings; an explicit project document path follows that document's ownership instead. Generated runs are Git-ignored by a narrowly scoped rule after safety checks. An interrupted identified run resumes; a changed decision gets a new linked revision. Missing tools or unreadable pages are reported and dependent facts remain unresolved. A saved handoff is reviewed requirements, not an approved implementation plan.
 
-For a new session, point `implementation-plan` at the saved Markdown:
+For a client-facing solution and readiness review before planning, optionally point `plan-review` at the full saved Markdown in a new session:
+
+```text
+$plan-review ".request-reviews/20261122T120000Z-example/reviewed-requirements.md"
+```
+
+It explains each request, proposed solution, work to plan, rationale and expected benefit, and offers `--detailed` and a later `--summary` for client communication. In the same conversation, “Review this scope with plan-review before implementation planning” passes the full current review. This step is optional and does not create the implementation plan or authorize implementation.
+
+For the implementation plan, point `implementation-plan` at the saved Markdown and include any plan-review findings:
 
 ```text
 $implementation-plan ".request-reviews/20261122T120000Z-example/reviewed-requirements.md"
 ```
 
-Replace the example run folder with the actual returned path; Claude Code uses `/implementation-plan`. In the same conversation, “Use this reviewed scope with implementation-plan” passes full recorded requirements, evidence and decisions. That skill must be installed separately and still asks its own phase-sizing and action questions. If unavailable, the full Markdown handoff remains usable later. Optional `bug-investigation` can deepen a defect investigation; `change-report` can describe changes after authorized implementation. Neither is a prerequisite.
+Replace the example run folder with the actual returned path; Claude Code uses `/plan-review` or `/implementation-plan` respectively. In the same conversation, “Use this reviewed scope with implementation-plan” passes full recorded requirements, evidence, decisions and any plan-review findings. These skills must be installed separately; implementation-plan still asks its own phase-sizing and action questions. If unavailable, the full Markdown handoff remains usable later. Optional `bug-investigation` can deepen a defect investigation; `change-report` can describe changes after authorized implementation. Neither is a prerequisite.
 
 ### Optional terminal state check
 

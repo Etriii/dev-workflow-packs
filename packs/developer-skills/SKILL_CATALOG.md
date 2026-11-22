@@ -4,7 +4,7 @@ Version 0.1.0; each stable skill ID equals its generic directory/frontmatter nam
 
 | Skill | Responsibility | Default mode |
 |---|---|---|
-| [plan-review](skills/plan-review/README.md) | Whole-plan coverage and dependencies | Planning |
+| [plan-review](skills/plan-review/README.md) | Solution value, request coverage and plan dependencies | Planning |
 | [implementation-plan](skills/implementation-plan/README.md) | Markdown plan, PDF requirements or task intake, phase questions, detailed chat plans and optional phase packages; execution is separate | Planning |
 | [request-review](skills/request-review/README.md) | Informal feedback and PDF review against current application, decisions and planning handoff | Review |
 | [blocker-check](skills/blocker-check/README.md) | Evidence-linked blockers and independent policy questions | Planning |

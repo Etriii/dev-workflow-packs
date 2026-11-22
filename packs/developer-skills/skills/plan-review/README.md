@@ -1,6 +1,6 @@
 # Plan Review
 
-Review complete-plan coverage, dependencies and existing implementation before development.
+Review a draft plan or reviewed requirements before implementation planning or development. The report explains each request, the proposed solution, what work would follow, why it is justified and the expected benefit. It also checks coverage, dependencies and current implementation. The default and detailed reports end with an overall summary; `--summary` creates a shorter client-ready version of an identified review.
 
 Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
 
@@ -107,23 +107,71 @@ For Claude Code, check `.claude/skills/plan-review/SKILL.md` in the project or b
 
 ## Use
 
-Refresh the agent session, open the target application, and invoke this in agent chat:
+Refresh the agent session and open the target application. Provide one complete draft plan or a reviewed-requirements handoff from `$request-review`; the handoff must contain the full scope, decisions and evidence, not just its short summary. The skill can use one clearly identified source already in the current conversation. It reads the source and the relevant application code and tests. A source file path must exist. In Codex agent chat, choose one of these independent requests:
 
 ```text
+$plan-review "docs/plan.md"
+$plan-review "docs/plan.md" --detailed
+$plan-review "<request-review-run>/reviewed-requirements.md"
+$plan-review --summary
+$plan-review help
 $plan-review Review docs/plan.md for requirement coverage and dependency order. Inspect phase 2 deeply after reading all phases.
 ```
 
-In Claude Code use `/plan-review`. These are agent chat instructions, not terminal commands.
+Replace `<request-review-run>` with the actual saved handoff folder. A review in the current conversation can be requested without a file, for example `$plan-review Review the reviewed requirements above against the application before implementation planning.` For Claude Code use `/plan-review`. These are agent-chat requests, not terminal commands. `--detailed` changes presentation only: the default review investigates the same scope. `--summary` works after one identifiable plan-review result in the conversation; it reuses that result without new source inspection. If several reviews might apply, identify the one to summarize in natural language. `--summary` cannot be combined with `--detailed` or a new review input. Unknown flags, competing source files and missing path-like files are errors. `help` only shows the main examples. A bare invocation with no unambiguous source asks for one.
+
+### Recommended sequence
+
+1. Use `$request-review` to settle informal feedback or a requirements PDF. If a later session will do the planning, save its full `reviewed-requirements.md` handoff.
+2. Use `$plan-review "<request-review-run>/reviewed-requirements.md"` to assess whether the proposed solutions address each request and are ready for implementation planning. If a complete draft plan already exists, review that instead; the report also checks phase coverage and order.
+3. Use `$plan-review --summary` after the review for copyable client communication. Send it yourself and record any client decisions. The summary does not carry all source evidence needed for planning.
+4. When the reviewed scope is settled, give the full request-review handoff and plan-review findings to `$implementation-plan`, which asks its own phase-sizing and output questions. A separate later request is needed to implement a selected phase. `$change-report` explains completed implementation after development; it does not approve the proposal.
+
+None of these steps runs automatically. Client approval of the summary confirms only the stated scope and decisions; it does not authorize code changes or publication.
 
 ## Expected result and stopping point
 
-Expect requirement coverage, source-referenced dependency findings, already-covered/missing/unknown work and unanswered decisions. Reordering is previewed before approved plan replacement; the review does not implement the plan.
+The default report groups by familiar application area or role. Each request gets its original ID when available, its current finding, proposed solution, work to plan, reason and expected benefit, plus a material decision or blocker. Viewable pages include a verified application-relative URL and access conditions; non-page work names its job or integration. A complete plan gets requirement-to-phase coverage and dependency findings. For reviewed requirements without phases, phase assignment stays pending implementation-plan. The report ends with a short overall summary.
 
-Supply the selected task or subject and relevant paths in the request or conversation. This skill uses natural-language scope rather than a fixed set of subcommands; do not add another skill's `run`, `build` or `--auto` syntax.
+`--detailed` retains that readable structure and adds source references and lines, request-to-phase mapping where available, alternatives, dependencies, access/data effects and observable acceptance checks. `--summary` condenses the identified result by client-facing category, preserves restrictions and open decisions, and ends with the decision needed and next step. It omits file tables and internal execution details. A short summary alone is not a complete implementation-plan handoff.
+
+Illustrative default excerpt, not a finding about any real application:
+
+```text
+Queue tickets
+- REQ-04 — Ticket reprint, /queue-system
+  Request: Let visitors reprint an issued ticket without getting a new number.
+  Current finding: A print action exists; retention after refresh is unverified.
+  Proposed solution: Reprint the stored ticket from the existing queue page.
+  Work to plan: Verify ticket persistence and ensure reprint creates no new queue entry.
+  Why and expected benefit: A visitor can replace lost paper without losing their place.
+  Decision needed: How long should an issued ticket remain available?
+
+Overall summary: The reprint flow is reasonable to plan after retention is decided.
+Persistence still needs verification. No implementation has been completed.
+```
+
+A `--detailed` review of that fictional case would also identify the source requirement, inspected route and relevant code lines, ticket-retention dependency, and an acceptance check that reprinting does not increase the queue count. A later `$plan-review --summary` would read:
+
+```text
+Reviewed source: REQ-04 from the current conversation; persistence remains unverified.
+
+Queue tickets
+- Visitors should be able to reprint an issued ticket without receiving a new number.
+  We recommend reusing the saved ticket so they keep their place in the queue.
+  The existing print action is known, but retention after refresh still needs verification.
+
+Decision needed: Confirm how long tickets remain available for reprint.
+Next step: After that decision and persistence check, prepare the implementation plan.
+```
+
+Reordering is previewed with old-to-new phase mapping and coverage proof before any approved plan replacement. Normal reviews and summaries stay in chat; they do not edit application code or project documents, stage, commit, push, deploy or contact a client. No tests are implied to have passed merely because source or test files were read. The agent states which checks actually ran and what remains unverified.
+
+Supply the selected source and relevant project in the request or conversation. The only flags are `--detailed` and `--summary`; scope and deep-inspection focus use natural language. Do not add another skill's `run`, `build` or `--auto` syntax.
 
 ## Prerequisites and limits
 
-Provide the source plan, requirements and repository evidence. Reordering needs approval; the review does not implement phases.
+Provide the source plan or full reviewed requirements and access to the application repository. If a saved handoff or repository is unavailable, provide the missing input and rerun the same request. If the handoff is old, the review checks current source where feasible and labels unverified evidence. A summary uses its identified prior review and may be stale; request a new review to refresh it. Reordering needs approval; the review does not implement phases. For a planning handoff, carry the full requirements and findings into implementation-plan, not just the client summary.
 
 The skill itself needs no private runner, API key or third-party runtime package. It uses the target repository's existing tools where the requested checks require them. Installing instructions does not execute them or prove model adherence.
 
