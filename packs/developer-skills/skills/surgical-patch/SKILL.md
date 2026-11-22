@@ -3,6 +3,8 @@ name: surgical-patch
 description: Fix a specific defect or small behavior change with focused regression evidence at the responsible layer.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Surgical Patch
 
 Input: A specific defect or small behavior change, affected behavior and authorized scope.

@@ -3,6 +3,8 @@ name: phase-handoff
 description: Write a bounded evidence-based phase handoff and checkpoint for another development session.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Phase Handoff
 
 Input: Selected phase scope, current Git state, changed files, decisions and executed checks.

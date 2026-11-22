@@ -2,6 +2,8 @@
 
 Inspect an application's workflows and configuration, decide whether runtime system settings are justified, and plan or implement only the selected scope. Works with established settings, partial implementations, and applications with none. A scan can recommend no new settings.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Update an installed copy
 
 For an existing **npx-managed project copy**, have Node.js 22.20+ with npm/npx, network access to npm and the recorded source, and Git for repository fallback. Save local edits first. PowerShell: replace `D:\My App` with the application where this skill is installed, then start there:

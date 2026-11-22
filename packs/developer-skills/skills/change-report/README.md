@@ -2,6 +2,8 @@
 
 Explain completed development changes as a brief walkthrough by role or page. Detailed mode adds source ranges, change purpose, verification and follow-up. The skill reads Git evidence; its Python helper does not write application code or Git state.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 ### Direct project install with npx

@@ -3,6 +3,8 @@ name: security-privacy-review
 description: Review trust boundaries authorization and data handling for a scoped software change.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Security Privacy Review
 
 Input: Affected data flows, roles, storage, integrations and authoritative privacy requirements.

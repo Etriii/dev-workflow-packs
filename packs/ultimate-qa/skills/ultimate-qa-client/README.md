@@ -2,6 +2,8 @@
 
 Prepare optional client reports and approval checklists, preserving returned decisions.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 ### Direct setup with curl and npx (recommended)

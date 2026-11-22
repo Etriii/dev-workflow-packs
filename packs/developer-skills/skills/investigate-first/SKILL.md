@@ -3,6 +3,8 @@ name: investigate-first
 description: Diagnose unclear or intermittent failures before proposing code changes using evidence and bounded reproduction.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Investigate First
 
 Input: An observed failure, its environment and any available reproduction, logs or affected paths.

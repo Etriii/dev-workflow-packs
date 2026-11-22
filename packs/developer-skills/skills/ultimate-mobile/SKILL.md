@@ -3,6 +3,8 @@ name: ultimate-mobile
 description: Inspect and improve existing application mobile web UI and UX, implement justified scoped fixes and verify them. Use for selected pages or explicitly all pages, with optional review-only reports and feature-based previews.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Ultimate Mobile
 
 Input: Target application and selected pages or explicit all-pages scope; absolute application/page paths, relative paths and authorized URLs are supported.

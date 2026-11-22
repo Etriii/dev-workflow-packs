@@ -3,6 +3,8 @@ name: deep-critique
 description: Give a detailed evidence-based critique with ratings challenged assumptions and prioritized improvements for an idea plan design implementation document or decision.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Deep Critique
 
 Input: A subject supplied explicitly or established in the conversation, its intended outcome, and available supporting material.

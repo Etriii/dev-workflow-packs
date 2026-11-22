@@ -2,6 +2,8 @@
 
 Analyze a task before execution, catch material ambiguities and save a versioned question file for each new intake. Choices put the justified recommendation first and allow a specific custom answer. Each response explains what to do next. Existing decisions are reused; clear tasks proceed without a forced questionnaire.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 ### Direct install with npx (recommended)

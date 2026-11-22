@@ -4,7 +4,7 @@ This folder lives at `<project root>/qa-findings/requirements/`. The AI agent re
 
 | # | File | What it is | Fill it in when |
 |---|---|---|---|
-| 01 | `01_RUN_SETTINGS.md` | How to run the review: mode, sections, destructive testing, output language | Rarely – defaults audit and plan, then stop |
+| 01 | `01_RUN_SETTINGS.md` | How to run the review: mode, sections, destructive testing; output language is fixed to English | Rarely – defaults audit and plan, then stop |
 | 02 | `02_PROJECT_CONTEXT.md` | What the app is, the roles and their **test accounts**, the **core user journeys**, environments, integrations, your **source documents** (spec, plan, brief) and your decisions. The agent pre-fills what it can detect on the first run | Before the plan run – 5 to 10 minutes. Test accounts and core journeys matter most: they decide *which role* the reviewer logs in as and *which pages* it walks through |
 | 03 | `03_IMPLEMENTATION_IDEAS.md` | The improvements you already intend to build (`IDEA-001`, `IDEA-002` …) so they are merged into the plan and not proposed twice. The agent appends its questions for the client at the bottom | Before the plan run. Delete the examples or overwrite them |
 | 04 | `04_CONDITIONS.md` | The decision register: every judgement call, who made it, and why – including the ones you made against the agent's advice, with your justification | The agent maintains it. Read it, tick *Reviewed*, and overrule anything you disagree with |

@@ -3,6 +3,8 @@ name: implementation-plan
 description: Review a Markdown plan, PDF requirements brief, or new task and produce a detailed implementation plan in chat or a safely stored phase package. Planning only; application execution requires a separate phase-specific request.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Implementation Plan
 
 Start from a supplied plan, a requirements PDF without a plan, or a task in chat. Inspect the project, settle decisions through questions, then present a detailed implementation plan in chat or prepare a detailed phase package. **This skill only plans: never edit application code, run an implementation phase, or make a commit.** Packages follow the document ownership of BALE's HIRING_AND_WORKFORCE package. Read [the package contract](references/package-contract.md) before drafting or revising files.

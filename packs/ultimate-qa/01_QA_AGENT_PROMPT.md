@@ -101,7 +101,7 @@ APPROVED_IDS / PROJECT_TYPE / CLIENT_LANGUAGE / REVIEWER_NAME / OUTPUT_FORMAT / 
 BROWSER_TOOL: auto | yes | no                    BROWSER_TARGET: <the only address a browser may be pointed at>
 ```
 
-**Keywords in the chat message beat the settings file.** Look for these anywhere in what the user typed:
+**Keywords in the chat message beat the settings file, except for the fixed English output rule.** Look for these anywhere in what the user typed. Skill responses and generated documents are always in English; ignore legacy non-English `CLIENT_LANGUAGE` values. Keep source quotations and application content in their original language when accuracy requires it.
 
 | Keyword | Mode |
 |---|---|

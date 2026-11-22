@@ -3,6 +3,8 @@ name: migration
 description: Implement an authorized compatibility-sensitive transition with preservation checks and a concrete rollback or recovery path.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Migration
 
 Input: The current and target contracts, affected readers and writers, existing data and approved transition scope.

@@ -3,6 +3,8 @@ name: ultimate-qa-accessibility
 description: Audit web accessibility through automated rules, keyboard journeys, semantics, and assistive-technology evidence.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Ultimate QA Accessibility
 
 Map the essential pages and roles, including error, dialog, loading, and empty states. Use an installed browser and accessibility engine where available. Run automated rule checks after each page has settled; collect rule ID, affected element, screenshot, and DOM context. Check labels, focus order, visible focus, keyboard operation, contrast, headings, status announcements, and responsive zoom on critical journeys.

@@ -3,6 +3,8 @@ name: business-rules-review
 description: Review eligibility approval and lifecycle rules against authoritative business decisions.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Business Rules Review
 
 Input: A scoped workflow, policy sources, state model and example records.

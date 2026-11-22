@@ -1,6 +1,6 @@
 # 01 – Run settings
 
-Read by the agent at the start of every run. Paths below mean folders inside the current QA version, `qa-findings/v<N>/`. An instruction typed in chat beats a value here. Leave the defaults unless you have a reason to change them.
+Read by the agent at the start of every run. Paths below mean folders inside the current QA version, `qa-findings/v<N>/`. An instruction typed in chat beats a value here except the fixed English output rule. Leave the defaults unless you have a reason to change them.
 
 **By default the agent performs QA only:** audit, then write the improvement plan. Use `$ultimate-qa run` for initialization through planning, or `$ultimate-qa run --client` to also prepare client documents. `$ultimate-qa-client prepare` packages an existing review. In Claude Code, replace the `$` prefix with `/`. Implementation requires a separate instruction.
 
@@ -52,7 +52,8 @@ PROJECT_TYPE: auto      # auto | website | web-app | api | mobile-backend
                         #   (website → Section 12 SEO applies; api → Sections 3, 4, 12 mostly N/A)
 
 CLIENT_LANGUAGE: English
-                        # language for all documents (e.g. English, Filipino, Taglish, Spanish)
+                        # fixed output language for skill responses and generated documents;
+                        # ignore legacy non-English values in existing run settings
 
 REVIEWER_NAME:          # printed on the cover of each document, e.g. "Juan Dela Cruz, QA lead"
                         # blank → "QA review"

@@ -3,6 +3,8 @@ name: request-review
 description: Review informal development requests or requirements PDFs against an existing application, settle scope decisions, and hand reviewed requirements to implementation-plan when asked. Review alone does not implement changes.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Request Review
 
 Codex uses `$request-review`; Claude Code uses `/request-review`. These are agent-chat requests, not terminal commands. Accept a bare invocation with clearly supplied text or an attachment, pasted text, a quoted accessible PDF/Markdown/text path, and optional `--detailed` in either order. `--summary` summarizes the latest **identified** review and starts no investigation. A natural `help` request shows only the main examples. Reject unknown flags, competing documents, `--summary` combined with new input or `--detailed`, and missing path-like files. If no request is identifiable, ask for one; if several prior reviews could be meant, ask which. Keep the selected display depth on follow-ups until changed. [Interface and output rules](references/review-workflow.md) apply to every review.

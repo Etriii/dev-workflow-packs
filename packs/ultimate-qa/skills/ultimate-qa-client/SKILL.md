@@ -3,6 +3,10 @@ name: ultimate-qa-client
 description: Optionally turn completed QA recommendations into client documents and track client decisions. Use only when client-facing output is requested.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
+The kit's `CLIENT_LANGUAGE` setting is fixed to English. Ignore legacy non-English values in existing run settings.
+
 # Ultimate QA Client
 
 This skill runs only when invoked directly or by `ultimate-qa run --client` after the QA plan is complete. Use `$ultimate-qa-client prepare` in Codex or `/ultimate-qa-client prepare` in Claude Code. Locate the Ultimate QA kit through `ULTIMATE_QA_KIT`, an adjacent `qa-template/`, or `kit-location.txt` in this skill folder (fall back to the core skill's marker for older installations); ask for its path only if needed. Read `12_CLIENT_PACK/README.md`, `03_OUTPUT_TEMPLATES.md`, and `06_INTAKE_AND_CONDITIONS.md` for the current task. Use the same verified application Git root and QA version as the core workflow. QA audit and plan never depend on this skill.

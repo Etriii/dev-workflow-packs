@@ -3,6 +3,8 @@ name: ultimate-ui-ux
 description: Inspect and improve existing application UI and UX, implement justified scoped fixes and verify them. Use for selected pages or explicitly all pages, with optional review-only reports and feature-based previews.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Ultimate UI and UX
 
 Input: A target application, selected pages or explicit all-pages scope, optional user journeys and design references. Accept absolute application/page paths, relative paths and authorized URLs.

@@ -53,7 +53,7 @@ For you and for the agent: each section of the returned form lands in one place 
 | 6. Documents | `02_PROJECT_CONTEXT.md` §8a Source documents, and `REQUIREMENTS_PATH` / `PLANS_PATH` / `PROGRESS_PATH` in `01_RUN_SETTINGS.md`; a done-list also goes into `06_PROGRESS_SOURCES.md` |
 | 7. Connected services | `02_PROJECT_CONTEXT.md` §6 Integrations |
 | 8. What we may and may not do | `01_RUN_SETTINGS.md`: `CAN_RUN_APP`, `DESTRUCTIVE_TESTING` + `DESTRUCTIVE_TARGET`, `SCOPE`; off-limits items into `ASK_BEFORE` and `02_PROJECT_CONTEXT.md` §1 Out of scope |
-| 9. Practical details | `01_RUN_SETTINGS.md`: `CLIENT_LANGUAGE`, `REVIEWER_NAME`; `02_PROJECT_CONTEXT.md` §1 (deadline), §8 (browsers and devices), §9 (data-protection laws) |
+| 9. Practical details | `01_RUN_SETTINGS.md`: `REVIEWER_NAME`; `02_PROJECT_CONTEXT.md` §1 (deadline), §8 (browsers and devices), §9 (data-protection laws). Skill documents use English. |
 | 10. Anything else | `02_PROJECT_CONTEXT.md` §10 |
 
 The client never sees `requirements/`. During the optional client workflow, later questions go in the version's `client/questions/` folder.

@@ -2,6 +2,8 @@
 
 Fix a specific defect or small behavior change with focused regression evidence at the responsible layer.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 ### Direct install with npx (recommended)

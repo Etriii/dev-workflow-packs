@@ -133,7 +133,6 @@ Tick what applies. Where you leave something blank we assume **no**.
 |---|---|
 | Deadline for the report, if any | |
 | Budget or a cap on hours, if any | |
-| Language for the documents (English, Filipino, Spanish…) | |
 | Browsers and devices you have agreed to support, if written down anywhere | |
 | Countries your users are in (decides which data-protection rules apply) | |
 | Your name and role as it should appear on the documents | |

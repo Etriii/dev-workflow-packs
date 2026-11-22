@@ -3,6 +3,8 @@ name: safe-refactor
 description: Restructure code while preserving defined behavior and verifying public contracts before and after the change.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Safe Refactor
 
 Input: A requested structural change, its behavior-preservation boundary and existing verification.

@@ -3,6 +3,8 @@ name: ultimate-qa-environment
 description: Check and prepare an isolated Docker-based application environment for QA, including Compose services and databases. Use before runtime QA or when environment setup fails.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Ultimate QA Environment
 
 Run `python <kit>/tools/qa_preflight.py --project <root>` when the kit is available. Before QA initialization, keep the result in command output so preflight does not create an unowned `qa-findings/` folder. After initialization and verified exclusion, exclusively reserve `qa-findings/vN/recommendations/evidence/YYYYMMDDTHHMMSSZ-<unique-id>/` and add `--out "<reserved-run>/preflight.json"` to save a new check. Replace `vN` with the active QA version and use the actual reserved path; never overwrite an earlier preflight result. Inspect the project's own Compose files, Dockerfiles, environment examples, migrations, test scripts, health checks, and service dependencies. Do not print secret values. Use a disposable database and test accounts; identify production connections before running writes.

@@ -3,6 +3,8 @@ name: critical-review
 description: Challenge a proposed technical plan for unsupported assumptions unnecessary complexity and missed failure modes.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Critical Review
 
 Input: A specific plan or diff, acceptance criteria and raw repository evidence.

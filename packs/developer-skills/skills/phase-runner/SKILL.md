@@ -3,6 +3,8 @@ name: phase-runner
 description: Execute exactly one authorized ready development phase with checkpoints and evidence gates.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Phase Runner
 
 Input: A selected phase, repository instructions, dependency evidence and current approval scope.

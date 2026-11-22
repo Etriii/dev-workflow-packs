@@ -3,6 +3,8 @@ name: table-ux-review
 description: Audit application tables and data grids for detail navigation and crowded row actions with role-aware recommendations and accessibility checks. Use when reviewing table interactions or implementing a requested table UX cleanup rather than database schemas.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Table UX Review
 
 Input: Target application or selected routes, relevant roles and workflows, and available source and browser access. If no application is identified, report the missing target instead of claiming a table audit.

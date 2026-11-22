@@ -3,6 +3,8 @@ name: lean-build
 description: Implement a bounded new feature by reusing existing owners and delivering the smallest complete verified outcome.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Lean Build
 
 Input: An authorized feature, acceptance conditions, repository instructions and current implementation.

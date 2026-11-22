@@ -11,6 +11,8 @@ Install directly with `npx skills` using Node.js 22.20+ and npm; ordinary skills
 
 Each skill has a README covering its purpose, installation, usage and prerequisites. Browse the [skill catalog](SKILL_CATALOG.md) or read [CONTRIBUTING.md](CONTRIBUTING.md) to contribute.
 
+All skills answer in English, including requests written in Tagalog or Bisaya. Generated reports use English while retaining original quotations and application content where needed.
+
 Use the [command guide](docs/SKILL_COMMANDS.md) for copyable requests, supported automatic workflows, expected outputs, and review/implementation boundaries across every skill.
 
 ## Find a skill by purpose

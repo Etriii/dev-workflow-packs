@@ -3,6 +3,8 @@ name: completion-check
 description: Verify selected acceptance criteria and integration evidence before declaring development work complete.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Completion Check
 
 Input: Acceptance criteria, relevant source revisions, test records and repository integration requirements.

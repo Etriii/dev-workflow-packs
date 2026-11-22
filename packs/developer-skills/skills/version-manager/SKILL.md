@@ -3,6 +3,8 @@ name: version-manager
 description: Plan and record a development-plan version transition while preserving prior accepted history.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Version Manager
 
 Input: Current and proposed plans, completion evidence and an explicit requested transition.

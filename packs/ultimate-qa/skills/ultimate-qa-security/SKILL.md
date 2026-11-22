@@ -3,6 +3,8 @@ name: ultimate-qa-security
 description: Review authorization, data integrity, dependency exposure, and safe failure behavior as part of a software QA audit.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Ultimate QA Security and Data
 
 Trace important data from untrusted input through validation, authorization, persistence, output, and deletion. Check role and tenant boundaries, direct object access, secret handling, session and token handling, data retention, migration rollback, backups, and concurrent writes. Run the project's existing security and dependency checks in a disposable environment; wait for completed results and verify tool findings against code and behavior before reporting defects.

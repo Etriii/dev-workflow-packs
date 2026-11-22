@@ -3,6 +3,8 @@ name: database-review
 description: Review schema migrations data invariants concurrency and recovery before database changes.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Database Review
 
 Input: Schemas, migrations, queries, data compatibility requirements and backup evidence.

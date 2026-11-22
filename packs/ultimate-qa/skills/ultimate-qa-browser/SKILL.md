@@ -3,6 +3,8 @@ name: ultimate-qa-browser
 description: Exercise QA user journeys, roles, accessibility, and visual states with a browser against an authorized local or staging target.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Ultimate QA Browser
 
 Read the kit's `11_BROWSER_ASSISTED_CHECKS.md` if available. Confirm the exact local or staging URL, available test roles, data reset method, and browser tool. Do not browse production by default. Map critical journeys from requirements and routes; cover success, validation, permission denial, empty state, loading, error, keyboard navigation, and narrow viewport where relevant.

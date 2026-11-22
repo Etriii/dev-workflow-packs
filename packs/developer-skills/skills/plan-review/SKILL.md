@@ -3,6 +3,8 @@ name: plan-review
 description: Review a complete implementation plan for coverage and dependency ordering before development begins.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Plan Review
 
 Input: A source plan, available repository evidence and the requested review boundary.

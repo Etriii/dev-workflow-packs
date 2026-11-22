@@ -3,6 +3,8 @@ name: system-settings
 description: Inspect an application's workflows and configuration to decide whether runtime system settings are justified, then plan, implement, or verify scoped settings with category-based loading and change auditing. Use for new or existing application settings rather than deployment configuration, secrets, or personal preferences.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # System Settings
 
 Input: Target application, requested operation and scope, existing decisions, and available source/runtime access.

@@ -3,6 +3,8 @@ name: prompt-intake
 description: Analyze a task prompt before execution and save versioned questions with recommended choices and custom answers. Use when asked to clarify a prompt or ask questions before starting work.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Prompt Intake
 
 Input: An actionable prompt supplied with the invocation or clearly identified in the current conversation, relevant requirements and existing decisions.

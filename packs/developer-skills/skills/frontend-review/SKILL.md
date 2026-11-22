@@ -3,6 +3,8 @@ name: frontend-review
 description: Review web interface behavior accessibility and responsive states with explicit visual evidence limits.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Frontend Review
 
 Input: Affected routes, components, user journeys, available design references and browser evidence.

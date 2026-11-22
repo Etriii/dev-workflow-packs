@@ -3,6 +3,8 @@ name: change-report
 description: Explain implemented Git changes as a brief role or page walkthrough, with optional source evidence, verification, task baselines, plans, and multiple repositories. Use after development work; do not use for business analytics reports.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Change Report
 
 Report what the selected change scope actually does in the application. Default to a short chat walkthrough. `detailed` adds source tables and relevant proof. Codex uses `$change-report`; Claude Code uses `/change-report`. These are agent-chat requests, not shell commands.

@@ -4,6 +4,8 @@ Ultimate QA is a set of instructions and tools for reviewing an **existing appli
 
 The normal workflow is **initialize → audit → plan**. `$ultimate-qa run` performs those stages in order. It produces evidence-backed findings and recommendations in the application repository. Add `--client` to generate client documents after the plan; implementation remains a separate step.
 
+All QA skills answer in English and write reports and client documents in English, including when the request is in Tagalog or Bisaya. Source quotations and application content retain their original language when needed. The kit's `CLIENT_LANGUAGE` value is fixed to English.
+
 ## What you need
 
 Use the [command guide](../../docs/SKILL_COMMANDS.md#ultimate-qa-requests) for core/client operations, standalone specialist requests and output boundaries. Continuous `run` ends at recommendations; it does not authorize implementing them.

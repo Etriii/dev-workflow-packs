@@ -4,6 +4,8 @@ Thirty-four independent skills for prompt intake, implementation packages, plann
 
 This pack belongs to [Dev Workflow Packs](../../README.md). Each skill has its own README with installation, usage and prerequisites.
 
+Every skill answers in English and writes generated reports in English, including when the request is in Tagalog or Bisaya. Source quotations and application content retain their original language when needed.
+
 The [command guide](../../docs/SKILL_COMMANDS.md) lists copyable requests, supported continuous workflows, expected outputs and stopping points for every skill. Natural-language reviewers do not inherit another skill's automation flags.
 
 Browse by purpose in the [categorized collection catalog](../../SKILL_CATALOG.md), or follow the [workflow guide](../../docs/SKILL_WORKFLOWS.md) for suggested standalone order and PhasePilot integration. The pack remains one installation source; categories do not change skill paths or require invoking every skill.

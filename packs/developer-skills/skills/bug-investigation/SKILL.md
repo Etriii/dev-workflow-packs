@@ -3,6 +3,8 @@ name: bug-investigation
 description: Investigate reported bugs across roles, pages, or repositories; optionally fix and verify them with evidence-based brief or detailed reports.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Bug Investigation
 
 Codex: `$bug-investigation`; Claude Code: `/bug-investigation`. These are agent-chat requests. Default: investigate and recommend, without application edits. `--fix` authorizes a focused correction. `--verify` rechecks an identified prior investigation or fix. `--detailed` selects the evidence report. `help` gives short examples and performs no investigation.

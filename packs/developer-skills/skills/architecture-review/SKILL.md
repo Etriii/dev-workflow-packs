@@ -3,6 +3,8 @@ name: architecture-review
 description: Review ownership boundaries coupling and dependency tradeoffs for a proposed software change.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Architecture Review
 
 Input: A concrete change or plan and the affected modules and dependency graph.

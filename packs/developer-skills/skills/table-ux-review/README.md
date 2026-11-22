@@ -4,6 +4,8 @@ Audit application tables and data grids for detail navigation, crowded row actio
 
 Same-tab detail links are the default, with native options to open a new tab. Explicit new-tab requirements are supported. More than three visible row actions triggers a review rather than automatic removal. Selection, editing, bulk workflows, and authorized access must survive any cleanup.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 ### Direct install with npx (recommended)

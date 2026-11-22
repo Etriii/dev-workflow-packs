@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Require English responses and generated reports from every shipping skill, including requests written in Tagalog or Bisaya.
 - Add request-review for application-grounded informal request and PDF intake, decision records, summaries and implementation-plan handoffs.
 - Add optional user-local implementation-plan defaults with a setup baseline for comparison, concise resolved-setting disclosure, and saved package policies that remain stable after config edits.
 - Require every skill README to cover its full supported user-facing interface, with a source-to-document review when capabilities change.

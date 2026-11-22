@@ -3,6 +3,8 @@ name: report-builder
 description: Discover reporting needs and design or implement application report pages with role-aware data boundaries and styled PDF and Excel exports. Use for business reporting features rather than narrative project status reports.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Report Builder
 
 Input: Target application, selected report or workflow, requested command and detail level, and available source/runtime access.

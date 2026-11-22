@@ -4,6 +4,8 @@ Inspect and improve mobile web UI and UX across selected routes or explicitly al
 
 Mobile checks also run in the main `ultimate-ui-ux`, `ultimate-ui` and `ultimate-ux` reviews. This independent shortcut selects mobile web work directly; it does not enable an otherwise missing check.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 ### Direct install with npx (recommended)

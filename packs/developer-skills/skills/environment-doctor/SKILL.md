@@ -3,6 +3,8 @@ name: environment-doctor
 description: Diagnose local workspace Git and Docker prerequisites with deterministic read-only commands.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Environment Doctor
 
 Input: An explicit workspace path and its documented required tools and services.

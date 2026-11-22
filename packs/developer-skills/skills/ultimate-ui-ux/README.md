@@ -4,6 +4,8 @@ Inspect and improve selected application pages, or explicitly all pages, with im
 
 The main skill includes both specialists and mobile checks by default. Install it alone for combined or focused work, or install the independent `ultimate-ui`, `ultimate-ux` and `ultimate-mobile` shortcuts. Every entrypoint carries its own required resources; no sibling skill, private kit or online design service is required.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 ### Direct install with npx (recommended)

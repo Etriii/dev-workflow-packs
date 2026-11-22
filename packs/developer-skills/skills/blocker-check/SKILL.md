@@ -3,6 +3,8 @@ name: blocker-check
 description: Find source-backed requirement and policy blockers before implementing a selected phase or feature.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Blocker Check
 
 Input: The selected scope, authoritative requirements, dependencies and existing evidence.

@@ -2,6 +2,8 @@
 
 Review informal development feedback or a requirements PDF against the current application. The review preserves original wording and source references, checks current behavior and access, asks focused questions, and produces a categorized review or short scope summary. It does not edit the application by default. See [agent instructions](SKILL.md), [output rules](references/review-workflow.md), and the [collection command guide](../../../../docs/SKILL_COMMANDS.md).
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 Installer prerequisites: Node.js 22.20+ with npm/npx; network access for a remote source; Git for repository fallback. Runtime: an agent with readable application source and any supplied documents. Python 3.11+ is needed only for the optional state helper or recorded installer. PDF inspection may require host PDF tools, rendering or OCR; unavailable methods must be reported. No other skill is required for basic review. On Windows, use PowerShell.

@@ -3,6 +3,8 @@ name: delivery-readiness
 description: Review delivery gates environment setup rollout and recovery using actual executed evidence.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Delivery Readiness
 
 Input: Release scope, configuration, CI results, environment requirements and deployment/recovery plans.

@@ -3,6 +3,8 @@ name: ultimate-qa-api
 description: Test API contracts, authentication, error behavior, idempotency, and database effects with repeatable integration checks.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
 # Ultimate QA API
 
 Discover the project's OpenAPI/schema, route definitions, existing API tests, and fixture setup. Run checks in its documented test container with a disposable database. Exercise representative success and failure cases for each critical resource: required fields, type and boundary validation, auth and role denial, cross-tenant IDs, pagination, filtering, duplicate submission, and retry behavior.

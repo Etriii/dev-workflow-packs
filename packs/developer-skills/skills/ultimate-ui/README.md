@@ -4,6 +4,8 @@ Inspect and improve visual hierarchy, layout, spacing, typography, consistency, 
 
 Mobile is included by default. Inspect label/control alignment, crowded headers, touch presentation and primary/secondary/destructive button distinctions. Use `ultimate-mobile` when the selected task needs mobile UI and UX together.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 ### Direct install with npx (recommended)

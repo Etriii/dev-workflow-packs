@@ -3,6 +3,10 @@ name: ultimate-qa
 description: Run an evidence-based, versioned QA review of a software project using the Ultimate QA kit. Use for run, initialize, audit, status, plan, and next-version commands.
 ---
 
+Write user-facing responses and generated reports in English, even when the request is in Tagalog or Bisaya. Preserve original quotations, code, identifiers, and application content when needed for accuracy.
+
+The kit's `CLIENT_LANGUAGE` setting is fixed to English. Ignore legacy non-English values in existing run settings.
+
 # Ultimate QA
 
 Start a new project with `$ultimate-qa run` or `$ultimate-qa initialize`. If no state exists, guide the user to initialize before a standalone `audit` or `plan`. Resolve the kit location from `ULTIMATE_QA_KIT`, an adjacent `qa-template/` directory, or `kit-location.txt` in this skill folder. If none works, ask for the kit path. Read the kit's `README.md`, `01_QA_AGENT_PROMPT.md`, `02_QA_CHECKLIST.md`, and relevant guides; the skill commands below control when work stops.

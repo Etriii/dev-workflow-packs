@@ -2,6 +2,8 @@
 
 Test API contracts, authentication, idempotency, error handling and persisted effects.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Install
 
 ### Direct install with npx (recommended)

@@ -2,6 +2,8 @@
 
 Start from an existing Codex or Claude Markdown plan, a PDF requirements brief with no plan yet, or a task described in chat. The skill asks planning questions, recommends compact and balanced phase counts, then presents a detailed implementation plan in chat or saves a detailed phase package. It never implements application changes. A saved package contains shared specifications, separate one-phase prompts, acceptance checks, progress and handoff.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Start in agent chat
 
 After installing the skill, refresh the agent session and open the target project. Codex uses `$implementation-plan`; Claude Code uses `/implementation-plan`. These are chat requests, not terminal commands. Replace `<plan-file.md>` with the path to your UTF-8 Markdown plan. The path follows the skill name directly; quote paths with spaces.

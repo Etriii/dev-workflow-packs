@@ -2,6 +2,8 @@
 
 Discover reporting needs across an application, specify useful business reports, and implement role-aware report pages with styled PDF and Excel exports.
 
+Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
+
 ## Automatic scan and build
 
 Open the target application in your coding agent. If this skill is not installed there, follow [Install](#install) first. Paste this into **agent chat**, not PowerShell or another terminal:
