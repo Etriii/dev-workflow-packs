@@ -55,6 +55,14 @@ Every saved package has `ORIGINAL_PLAN.md`, `README.md`, `PLAN.md`, `CONTRACTS.m
 
 `COMMIT_MESSAGES.md` must contain detailed, copyable messages for the planned work, split by repository and distinct feature. Each message has a Conventional Commit subject and a substantive body explaining the intended behavior, why it matters, planned changes, and relevant verification or migration notes. At planning time, label unrun checks `NOT_RUN` and avoid invented file paths or hashes. When implementation happens, update messages from the actual diff and checks. A list of one-line subjects is incomplete. This requirement applies with every commit policy, including the built-in default with commits off. Terse chat styles do not shorten persisted commit messages.
 
+After a separately requested phase is implemented, an explicit follow-up such as `commit it` authorizes that completed scope to be committed even if the package's commit policy is off. The phase prompt and `HANDOFF.md` identify the exact package revision. On every commit-only follow-up, the agent rereads that revision's `COMMIT_MESSAGES.md`, checks its matching draft against the actual repository diff and checks, stages only owned files, and uses a corrected detailed message. It verifies the commit and remaining Git status, then stops. A stale draft does not authorize extra files or unrun-check claims; missing or unreadable drafts are disclosed. If the active package revision cannot be identified, supply its exact path. This follow-up does not run tests or edit application code unless a repository rule or commit hook requires it; it does not enable future automatic commits, push, deploy or start another phase.
+
+Agent chat, after the selected phase has finished (replace `<package-path>` with its exact revision path when the session does not establish it):
+
+```text
+Commit the completed work from <package-path>. Use its COMMIT_MESSAGES.md after checking the actual changes and verification.
+```
+
 ## Optional one-time settings
 
 The skill works without a config file: commits are `off`, test scope is `focused`, and skill assignment mode is `auto`. To set personal defaults for **new** work, copy the installed skill's [`assets/config.json`](assets/config.json) to `~/.config/implementation-plan/config.json` (on Windows, `$HOME\.config\implementation-plan\config.json`). Keep this file outside the installed skill so an update cannot replace your settings. It applies across projects for this user; project instructions and explicit requests still take precedence. This setup is optional and does not install or run the skill.

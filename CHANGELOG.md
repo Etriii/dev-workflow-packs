@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Make implementation-plan phase prompts and handoffs point to their package commit drafts for later explicit commit-only requests, with diff-backed message review.
 - Clarify report-builder placement in existing navigation and feature pages, screen-preview parity and limits, and BALE's optional source examples.
 - Require English responses and generated reports from every shipping skill, including requests written in Tagalog or Bisaya.
 - Add request-review for application-grounded informal request and PDF intake, decision records, summaries and implementation-plan handoffs.
