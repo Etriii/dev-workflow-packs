@@ -30,7 +30,7 @@ NAMES = {
     "frontend-review", "backend-review", "database-review", "security-privacy-review",
     "business-rules-review", "delivery-readiness", "critical-review", "deep-critique", "prompt-intake", "implementation-plan",
     "investigate-first", "lean-build", "surgical-patch", "safe-refactor", "migration", "verify-and-stop",
-    "report-builder", "change-report", "bug-investigation", "system-settings",
+    "report-builder", "change-report", "bug-investigation", "request-review", "system-settings",
     "table-ux-review",
     "ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile",
 }
@@ -45,7 +45,7 @@ class CatalogTests(unittest.TestCase):
                 path = skill.path
                 metadata = catalog.validate_skill(path)
                 self.assertEqual(metadata["skill_id"], name)
-                expected_agents = [] if name in {"report-builder", "change-report", "bug-investigation", "system-settings", "implementation-plan", "table-ux-review", "ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile"} else ["codex", "claude"]
+                expected_agents = [] if name in {"report-builder", "change-report", "bug-investigation", "request-review", "system-settings", "implementation-plan", "table-ux-review", "ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile"} else ["codex", "claude"]
                 self.assertEqual(metadata["compatible_agents"], expected_agents)
                 expected_files = {"SKILL.md", "README.md", "metadata.toml"}
                 if name == "deep-critique":
@@ -59,6 +59,8 @@ class CatalogTests(unittest.TestCase):
                     expected_files |= {"scripts/change_report.py", "references/report-format.md", "assets/brief.md", "assets/detailed.md"}
                 elif name == "bug-investigation":
                     expected_files |= {"scripts/bug_investigation.py", "references/report-format.md", "references/repository-evidence.md", "assets/brief.md", "assets/detailed.md"}
+                elif name == "request-review":
+                    expected_files |= {"scripts/review_state.py", "references/review-workflow.md", "references/state-and-handoff.md"}
                 elif name == "system-settings":
                     expected_files |= {"references/discovery.md", "references/implementation.md"}
                 elif name == "implementation-plan":

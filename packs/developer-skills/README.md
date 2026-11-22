@@ -1,6 +1,6 @@
 # Developer Skills pack
 
-Thirty-three independent skills for prompt intake, implementation packages, planning, UI/UX and mobile review, reports, system settings, implementation, generic critique, development reviews, delivery checks and handoff. Each README and metadata file is included in the payload manifest. No private runner, Docker or API key is required. The Python installer works offline once the source is downloaded.
+Thirty-four independent skills for prompt intake, implementation packages, planning, UI/UX and mobile review, reports, system settings, implementation, generic critique, development reviews, delivery checks and handoff. Each README and metadata file is included in the payload manifest. No private runner, Docker or API key is required. The Python installer works offline once the source is downloaded.
 
 This pack belongs to [Dev Workflow Packs](../../README.md). Each skill has its own README with installation, usage and prerequisites.
 
@@ -37,7 +37,7 @@ python tools/install_skills.py --pack developer-skills --agent both --project "D
 python tools/install_skills.py --pack developer-skills --agent both --project "D:\My App" --bundle essential
 ```
 
-Essential contains plan-review, blocker-check, phase-handoff and completion-check. Use `--skills blocker-check` for one or `--bundle all` explicitly for all 33. Installation executes no skill. The pack-local `tools/install_skills.py` is an entry point to the same collection tool.
+Essential contains plan-review, blocker-check, phase-handoff and completion-check. Use `--skills blocker-check` for one or `--bundle all` explicitly for all 34. Installation executes no skill. The pack-local `tools/install_skills.py` is an entry point to the same collection tool.
 
 The [installation guide](../../INSTALL.md) covers user scope, integrity, matching-copy adoption, backup replacement and recovery. The [removal guide](../../UNINSTALL.md) gives tracked uninstall/reinstall commands. Completed changing operations create scoped Markdown history; removal preserves records and content backups.
 
@@ -58,6 +58,7 @@ Read [SKILL_CATALOG.md](SKILL_CATALOG.md) for selection and [docs/SKILL_STANDARD
 | [delivery-readiness](skills/delivery-readiness/README.md) | Check configuration, tested artifacts, rollout sequencing and recovery before delivery. |
 | [environment-doctor](skills/environment-doctor/README.md) | Inspect local tool availability, Git state and required services with read-only diagnostics. |
 | [implementation-plan](skills/implementation-plan/README.md) | Clarify a Markdown plan, PDF requirements brief, or new task, then implement a bounded scope or prepare an ignored phase package. |
+| [request-review](skills/request-review/README.md) | Review informal feedback or PDFs against the application, record decisions and hand reviewed scope to planning. |
 | [investigate-first](skills/investigate-first/README.md) | Diagnose unclear failures before proposing code changes. |
 | [lean-build](skills/lean-build/README.md) | Implement a bounded feature through existing owners. |
 | [migration](skills/migration/README.md) | Make compatibility-sensitive transitions with preservation and recovery proof. |

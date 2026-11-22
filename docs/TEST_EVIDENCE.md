@@ -1,5 +1,14 @@
 # Collection verification
 
+## Request Review skill, 2026-11-22
+
+Added `request-review` as a self-contained Developer Skills review with instructions, output/state references, a standard-library ledger validator, usage README, metadata and a payload manifest. The review interface stays in agent chat; the helper validates recorded IDs, source coverage, PDF page inventory status, decision provenance, relative file references and handoff content. It does not translate feedback, inspect PDF pixels, verify access rules or decide whether a defect is real.
+
+- Focused request-review and affected installer, lifecycle and packaging tests: 57 passed on Windows. Fixtures cover mixed Cebuano/English wording, compound and duplicate source mappings, a partially implemented feature, a local fix without deployment proof, signed-link access recorded in state, explicit/default decision provenance and override, factual blockers, proposed/existing files, PDF text/visual/OCR status records, multi-repository paths, exclusion history and saved handoff content. These are ledger and contract tests, not model-behavior or PDF-reading trials.
+- `tools/check_skills.py --all`: 43 PASS, 0 FAIL; native agent compatibility and artifact behavior remain NOT VERIFIED by the static checker. Skill Creator's `quick_validate.py` accepted the new skill with Python UTF-8 mode. `git diff --check` passed.
+- A local working-tree ZIP was built by `tools/package_skills.py`; no remote publication, real profile installation, native Codex/Claude review trial or live application/PDF review was performed.
+
+
 ## Direct installation documentation, 2026-10-31
 
 Rewrote installation sections for all 39 skill READMEs to recommend npx first, with prerequisites, shell/starting folder, agent and scope selection, expected files, refresh instructions, and a clearly optional Python route. Ordinary skills need no manual source acquisition. Python examples now explain ZIP/clone acquisition and the collection root before local-script commands. QA core/client instructions use curl ZIP acquisition and npx from the retained matching kit, with existing-kit reuse and environment-path scope explained.
