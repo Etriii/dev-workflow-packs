@@ -13,7 +13,7 @@ Clarify scope and policy, inspect dependencies and preserve plan decisions befor
 | Skill | Purpose | Install pack |
 |---|---|---|
 | [blocker-check](packs/developer-skills/skills/blocker-check/README.md) | Find requirement, policy, dependency and environment blockers before implementation. | `developer-skills` |
-| [implementation-plan](packs/developer-skills/skills/implementation-plan/README.md) | Detailed or lightweight planning from Markdown, PDF or chat; prepare a plan in chat or an ignored package for separately requested execution. | `developer-skills` |
+| [implementation-plan](packs/developer-skills/skills/implementation-plan/README.md) | Detailed or lightweight planning from Markdown, PDF or chat; optional parallel preparation with isolated worktree instructions and one merge-prompt file. Application execution is separate. | `developer-skills` |
 | [plan-review](packs/developer-skills/skills/plan-review/README.md) | Assess reviewed requests or draft plans for solution value, coverage and readiness before planning or development. | `developer-skills` |
 | [prompt-intake](packs/developer-skills/skills/prompt-intake/README.md) | Clarify a task with recommended choices, custom answers, versioned question files and next-action hints. | `developer-skills` |
 | [request-review](packs/developer-skills/skills/request-review/README.md) | Review informal feedback or PDFs against the application, record decisions and hand reviewed scope to planning. | `developer-skills` |

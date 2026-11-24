@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Start from an existing Codex or Claude Markdown plan, a PDF requirements brief with no plan yet, or a task described in chat. Default planning is detailed; `--light` reduces documentation for one small task. The skill presents a plan in chat or saves an ignored package. It never implements application changes, creates branches/worktrees, merges or cleans up Git work. Default planning preserves your current branch rather than switching to main.
+Start from an existing Codex or Claude Markdown plan, a PDF requirements brief with no plan yet, or a task described in chat. Default planning is detailed and sequential; `--light` reduces documentation for one small task, and `--parallel-ready` prepares independent work for later sessions. The skill presents a plan in chat or saves an ignored package. It never implements application changes, creates branches/worktrees, merges or cleans up Git work. Default planning preserves your current branch rather than switching to main.
 
 Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
 
@@ -73,8 +73,11 @@ Examples here are agent-chat requests after opening the target project and refre
 
 | Selection | Effect | Boundary |
 |---|---|---|
-| No mode option | Detailed sequential plan or package. | New work preserves the current branch; revisions inherit the saved profile. |
+| No mode option | Detailed sequential plan or package. | New work preserves the current branch; revisions inherit saved mode. |
 | `--light` | One compact task, no task-count question. | Material questions and correctness/verification requirements remain. |
+| `--parallel-ready` or `--parallel-ready=analysis` | Dependencies, ownership, eligible groups and task reading sets. | Does not promise safe simultaneous writes in one checkout. |
+| `--parallel-ready=worktree` | Also prepares isolated branch/worktree instructions and merge prompts. | Requires Git, committed baselines and identified targets before prompts are ready; no Git mutation during planning. |
+| `--parallel-ready=off` | Sequential preparation in a new revision. | Does not clean up existing branches/worktrees or erase evidence. |
 
 ### Lightweight tasks
 
@@ -91,7 +94,7 @@ Prepare the package.
 
 The skill reads current source and relevant tests, settles material uncertainties and plans one coherent task. A saved package contains `.package.json`, `PLAN.md`, `ORIGINAL_PLAN.md` and the original PDF only when supplied. `PLAN.md` combines scope, evidence, contracts, acceptance, checks, detailed commit drafts, progress, blockers, handoff and the P01 execution prompt. No separate tracking files or `prompts/` directory are required. `status` reads this plan; `prompt <package> P01` retrieves its execution section. Nothing executes until separately requested. Resume the identified unfinished revision and update its plan's tracking sections.
 
-Light supports selected skills, test/commit policies and a positive maximum; that maximum is a cap and does not add tasks. Work too broad for one implementation-and-proof unit requires reduced scope or detailed mode before writes. Security, permissions, data preservation, migration safety and verification still apply.
+Light supports selected skills, test/commit policies and a positive maximum; that maximum is a cap and does not add tasks. It conflicts with parallel modes except `off`. Work too broad for one implementation-and-proof unit requires reduced scope or detailed mode before writes. Security, permissions, data preservation, migration safety and verification still apply.
 
 To expand a light package, explicitly request detailed mode in natural language. A new revision preserves the original and confirms the expanded task count:
 
@@ -99,13 +102,69 @@ To expand a light package, explicitly request detailed mode in natural language.
 $implementation-plan revise "<package-path>" "Expand this into a detailed package covering the agreed additional requirements."
 ```
 
-To reduce a detailed package to an agreed single task, select light:
+To reduce a detailed package to an agreed single task, select light and disable inherited parallel preparation:
 
 ```text
-$implementation-plan revise "<package-path>" "Limit scope to the agreed empty-state correction." --light
+$implementation-plan revise "<package-path>" "Limit scope to the agreed empty-state correction." --light --parallel-ready=off
 ```
 
-See [light planning](references/light-planning.md) and the [detailed package contract](references/package-contract.md) for authoring and recovery rules.
+### Parallel preparation
+
+```text
+$implementation-plan "<plan-file.md>" --parallel-ready
+```
+
+The agent reads current owners, contracts, tests and dependencies. Each task records prerequisites, concrete ownership, mutable resources, reading set and rationale, alongside groups that can start together. Shared services, migrations, generated files, fixtures and ports can require serialization even with different filenames. Unknown coupling stays sequential; no safe split is a valid result with an explanation. Default planning preserves the current branch; choosing main or another integration branch is explicit.
+
+For later isolated execution:
+
+```text
+$implementation-plan "<plan-file.md>" --parallel-ready=worktree --commits scoped
+```
+
+Worktree mode records repository, actual base commit, branch and separate directory, integration target, checks and evidence ownership. It prepares instructions only. Later explicitly invoked workers check live state, create only their owned isolation, verify package access, implement their task, run checks and stop. Existing branches/directories and unrelated changes are preserved. Ignored packages do not follow Git branches: use the canonical package read-only or a verified copy. Workers save separate evidence under `evidence/<phase-id>/`; one coordinator updates canonical progress, handoff and shared commit drafts. Coupled cross-repository work stays sequential unless coherently split; each merge operation targets one repository.
+
+The example permits verified owned local worker commits after a later invocation. Use `--auto-commit` instead when those commits should be required automatically; it conflicts with `--commits`. With commits off, worker results await an explicit commit request and cannot merge while uncommitted. Parallel preparation does not start sessions, install a scheduler, guarantee semantic independence or claim token/time savings. Revisions inherit policies and revalidate affected evidence.
+
+To return to sequential preparation:
+
+```text
+$implementation-plan revise "<package-path>" "Prepare the remaining scope sequentially." --parallel-ready=off
+```
+
+This saves a revision with phase dependencies and valid history, reporting outstanding branch/evidence recovery separately. It does not run cleanup.
+
+### One Markdown file for merge requests
+
+When isolated work exists, all merge prompts live in **one** file beside implementation prompts:
+
+```text
+prompts/
+  P01_<OBJECTIVE>.md
+  P02_<OBJECTIVE>.md
+  P03_<OBJECTIVE>.md
+  MERGE_PROMPTS.md
+```
+
+The file has shared rules, exact `## M01`, `## M02` headings, descriptive objectives, prerequisites, source branches, target/repository identities, checks, recovery and cleanup rules. Markdown separators distinguish operations. Each section contains a separately copyable agent-chat request with the actual package path. PROMPTS.md links to the sections without duplicated bodies. Integration belongs to identified phases and counts in sizing; merge prompts do not hide extra implementation phases. No safe split means no merge file.
+
+Display one section read-only:
+
+```text
+$implementation-plan prompt "<package-path>" M01
+```
+
+After the named workers commit their verified work, invoke that section outside the planning skill. Replace the path with its exact revision:
+
+```text
+Execute only M01 from "<package-path>/prompts/MERGE_PROMPTS.md". Read its shared rules and selected section, verify live prerequisites, integrate only its named committed work, run required checks, preserve evidence, perform eligible owned cleanup, record the outcome and stop.
+```
+
+This explicit request authorizes that local integration, a necessary merge commit and eligible owned cleanup. Displaying a section does not. The executing agent checks source hashes against worker proof, dependencies, target branch/HEAD, a clean checkout and absence of another Git operation. It revalidates target changes since planning, integrates named refs serially and runs combined checks. It does not commit dirty worker results, push, deploy, start another task or silently fix application failures.
+
+Conflicts, missing prerequisites, stale evidence and failed checks stop further merges/cleanup with `MERGE_PENDING` and an exact recovery point. Retry recognizes integrated commits and completes outstanding proof. Only verified integration permits cleanup: preserve durable evidence and needed ignored/untracked deliverables, confirm source commits are target ancestors and identities are task-owned, then remove clean owned worktrees and delete merged owned branches with `git branch -d`. No force deletion or pre-existing work removal. Cleanup failures are recorded separately; verify Git registration and directory existence independently. Repository rules and branch protection still apply.
+
+See [light planning](references/light-planning.md), [parallel planning and metadata](references/parallel-planning.md) and the [detailed package contract](references/package-contract.md) for authoring and recovery rules.
 
 ## Optional one-time settings
 
@@ -137,13 +196,14 @@ $implementation-plan skills <package>
 $implementation-plan skills <package> --add migration,verify-and-stop --skills-mode auto
 $implementation-plan skills <package> --remove ultimate-ui-ux --skills-mode all
 $implementation-plan prompt <package> P01
+$implementation-plan prompt <package> M01
 $implementation-plan check <package>
 $implementation-plan status <package>
 $implementation-plan status
 $implementation-plan help
 ```
 
-`revise` and changing `skills` requests save a new revision, preserve earlier files and valid evidence, and report the new path. Omitted options inherit prior values, including profile. `skills` changes only skill selection/assignment mode. `skills` without changes, `prompt`, `check`, `status`, and `help` are read-only. Unknown phase IDs, conflicting options, invalid enum values, missing/path-like inputs and cross-project revisions are errors. Adding and removing the same skill in one request is invalid. `status` without a path lists recognized packages in the current project; it does not select one for editing.
+`revise` and changing `skills` requests save a new revision, preserve earlier files and valid evidence, and report the new path. Omitted options inherit prior values, including profile and parallel mode. `skills` changes only skill selection/assignment mode. `skills` without changes, `prompt`, `check`, `status`, and `help` are read-only. Unknown phase/merge IDs, conflicting options, invalid enum values, missing/path-like inputs and cross-project revisions are errors. Adding and removing the same skill in one request is invalid. `status` without a path lists recognized packages in the current project; it does not select one for editing.
 
 `--max-phases N` proposes the Custom maximum hard cap in detailed mode; light mode keeps one task within the supplied cap. Detailed mode confirms the cap and resulting exact count before acting. The package store records both values and rejects a count above the cap. `--skills name1,name2` selects skills for later phase prompts. With no config, `--skills-mode auto` is the default: it reads selected skill instructions and assigns them to relevant phases. `--skills-mode all` places all selected skills in every prompt; conflicts and missing skills are reported rather than silently resolved. The planning skill does not install or invoke selected skills. With no config, `--commits off` is the default: later phase prompts may draft messages but do not authorize commits. `--commits scoped` permits owned local commits when a later phase is separately invoked and its required checks pass, subject to repository rules. `--auto-commit` records `auto` in the package so a later invoked phase prompt requires a local commit of only verified, owned changes after its checks pass. That commit must have a Conventional Commit subject, a blank line and a substantive body explaining what changed, why, and which checks actually ran; subject-only messages fail this requirement. The later agent inspects the Git diff, stages only owned paths, and verifies the committed message, changed paths and remaining status. Failed checks, missing prerequisites or no owned changes mean no commit; the agent reports the reason. Planning, package creation and revision never commit, including with `--auto-commit`. To turn auto-commit off in a package revision, use `--commits off`. Do not combine `--auto-commit` with `--commits`, even `scoped`; an option matching the config is allowed but redundant. No policy authorizes a push, deployment or another phase.
 
@@ -151,7 +211,7 @@ With no config, `--test-scope focused` is the default for later implementation p
 
 Package choices save under `<project-root>/.implementation-plans/YYYYMMDDTHHMMSSZ-<feature>/<UTC-run-id>/`. The UTC timestamp makes new feature folders sort by creation time in a file browser; for example, `20261120T063718Z-queue-and-operations/`. Each revision has a unique run directory and stays in its feature folder. The skill adds `/.implementation-plans/` to the root `.gitignore` when needed and verifies exclusion before saving. It leaves existing `docs/` content and older feature folders untouched; revisions of earlier packages link back to their original path without moving it. Tracked output is refused without automatic untracking. In a non-Git project exclusion is unverified. Resume an identified draft revision after interruption; never overwrite or discard an earlier one. A failed storage check stops saving and reports the exact reason.
 
-`check` confirms profile-specific files and dependency graph consistency. It rejects subject-only commit lists or commit blocks without bodies in COMMIT_MESSAGES.md or the light plan. The author must still review whether each body covers its repository and logical feature in useful detail, along with requirement coverage, dependencies, links, prompt scope and evidence claims. A passing check does not prove implementation, native agent adherence or runtime behavior. After package preparation, request one specific phase in a separate turn using its exact path and ID, such as `Implement P01 from <package-path>`, or invoke the exact stored prompt returned by `prompt <package> P01`. Both routes stop at that phase; `$implementation-plan` itself remains planning-only.
+`check` confirms profile-specific files, graph consistency, ownership/resource separation, worktree baselines/identities, and merge-section mapping. It rejects subject-only commit lists or commit blocks without bodies in COMMIT_MESSAGES.md or the light plan. The author must still review whether each body covers its repository and logical feature in useful detail, along with requirement coverage, dependencies, links, prompt scope and evidence claims. A passing check does not prove implementation, native agent adherence or runtime behavior. After package preparation, request one specific phase in a separate turn using its exact path and ID, such as `Implement P01 from <package-path>`, or invoke the exact stored prompt returned by `prompt <package> P01`. Both routes stop at that phase; `$implementation-plan` itself remains planning-only.
 
 ## Bundled helper commands
 
@@ -163,7 +223,13 @@ PowerShell, starting in any folder: replace `<installed-skill-dir>`, `<project-p
 python -B '<installed-skill-dir>/scripts/package_store.py' start --project '<project-path>' --feature '<feature-name>' --profile light --phase-count 1
 ```
 
-Additional `start` arguments are `--max-phases N`, `--skills name1,name2`, `--skills-mode auto|all`, `--commits off|scoped|auto`, `--test-scope focused|full`, `--previous <exact-package-path>`, `--source-plan <Markdown-path>` or `--source-document <PDF-path>` (mutually exclusive), `--profile detailed|light`. Chat `--light` maps to helper `--profile light`; chat `--auto-commit` maps to helper `--commits auto`. Do not transfer these flags between interfaces. New reservations default to detailed/off and the existing user-config policies; revisions inherit unspecified policies, selection, sizing and profile. Explicit overrides apply to the new revision. Light needs one task; nonpositive counts, exceeded caps, invalid policies/names and unsafe storage fail. No helper dry-run or merge executor exists.
+This alternative reserves a detailed worktree-planning draft without creating branches:
+
+```powershell
+python -B '<installed-skill-dir>/scripts/package_store.py' start --project '<project-path>' --feature '<feature-name>' --phase-count 3 --parallel-ready=worktree
+```
+
+The confirmed task count replaces `3`. Additional `start` arguments are `--max-phases N`, `--skills name1,name2`, `--skills-mode auto|all`, `--commits off|scoped|auto`, `--test-scope focused|full`, `--previous <exact-package-path>`, `--source-plan <Markdown-path>` or `--source-document <PDF-path>` (mutually exclusive), `--profile detailed|light`, and `--parallel-ready[=off|analysis|worktree]`. Bare helper `--parallel-ready` selects analysis. Chat `--light` maps to helper `--profile light`; chat `--auto-commit` maps to helper `--commits auto`. Do not transfer these flags between interfaces. New reservations default to detailed/off and the existing user-config policies; revisions inherit unspecified policies, selection, sizing, profile and mode. Explicit overrides apply to the new revision. Light needs one task with parallel off; nonpositive counts, exceeded caps, invalid policies/names and unsafe storage fail. No helper dry-run or merge executor exists.
 
 Read-only examples, same shell and folder rules:
 
@@ -184,10 +250,10 @@ python -B '<installed-skill-dir>/scripts/package_store.py' skills --package '<pa
 ```
 
 ```powershell
-python -B '<installed-skill-dir>/scripts/package_store.py' prompt --package '<package-path>' --phase P01
+python -B '<installed-skill-dir>/scripts/package_store.py' prompt --package '<package-path>' --phase M01
 ```
 
-The historical helper argument `--phase` accepts a Pxx ID. Prompt retrieval requires a ready package with no validation errors; unknown IDs fail. `check` returns nonzero for structural errors, including missing documents, dependency cycles. `status` includes the saved ledger and consistency errors without treating them as implementation proof. Fix an identified unfinished draft, recheck, and mark ready only after semantic review. Use a new revision for changes to an established plan. These read-only commands do not change package files, Git state or user config.
+The historical helper argument `--phase` accepts either a Pxx or Mxx ID. Prompt retrieval requires a ready package with no validation errors; unknown IDs fail. `check` returns nonzero for structural errors, including missing documents, dependency cycles, overlapping grouped owners/resources, invalid baselines/worktree identities or merge-section mappings. `status` includes the saved ledger and consistency errors without treating them as implementation proof. Fix an identified unfinished draft, recheck, and mark ready only after semantic review. Use a new revision for changes to an established plan. These read-only commands do not change package files, Git state or user config.
 
 ## Install
 

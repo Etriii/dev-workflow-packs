@@ -14,7 +14,7 @@ Public skills work without PhasePilot. Use these stages when the corresponding n
 |---|---|---|
 | The task needs clarification | `prompt-intake` | Versioned questions, recommendations, custom answers and a concrete next action. |
 | Informal feedback or a PDF needs application-grounded review before planning | `request-review` | Categorized requests, current-behavior evidence, decisions and an optional reviewed-requirements handoff. |
-| A Markdown plan, PDF brief or new task needs planning | `implementation-plan` | Detailed by default; `--light` uses one compact task without task-count questions. Present the plan in chat or prepare an ignored package. Later execution names one exact task and package. |
+| A Markdown plan, PDF brief or new task needs planning | `implementation-plan` | Detailed by default; `--light` uses one compact task. `--parallel-ready` assesses independence; `--parallel-ready=worktree` prepares isolated execution and one merge-prompt file. Planning never executes Git changes. Later invoke one exact task or merge section. |
 | An implementation plan needs review | `plan-review`; optionally `critical-review` or `deep-critique` | Coverage, dependency findings and justified changes. Choose a short planning challenge or a broader assessment as needed. |
 | Decisions or technical risks remain | `blocker-check` and relevant engineering reviewers | Evidence-linked blockers and decisions before dependent implementation. |
 | Execution prerequisites need checking | `environment-doctor` | Available tools, services, Git state and explicit missing prerequisites. |

@@ -6,7 +6,7 @@ Read only when light mode is selected. It reduces documentation and questions fo
 
 Skip phase-sizing questions and use P01 only. A positive `--max-phases` remains an upper bound; it does not request extra tasks. Resolve material uncertainties and the chat/package choice, honoring answers already supplied. Chat output contains the compact plan directly. A saved light revision contains `.package.json`, `PLAN.md`, `ORIGINAL_PLAN.md`, and `SOURCE_DOCUMENT.pdf` only when supplied. No separate `prompts/`, status, handoff or commit-message document is required.
 
-Keep the original-source and safe-storage rules from SKILL.md. Reserve using the installed helper's internal `--profile light --phase-count 1`. Do not add profile fields to user-global config.
+Keep the original-source and safe-storage rules from SKILL.md. Reserve using the installed helper's internal `--profile light --phase-count 1`. Do not add profile fields to user-global config. Light conflicts with parallel modes except `off`.
 
 ## One document, complete responsibility
 
@@ -24,8 +24,8 @@ Use real decisions and commands, not generic headings. The prompt section extend
 
 ## Metadata, revisions and checks
 
-New packages use schema 3. Set `profile: "light"`, `phase_count: 1`, `phases: {"P01": "PLAN.md#P01"}`, `dependencies: {"P01": []}` and normal skill assignments. Preserve the helper's remaining metadata.
+New packages use schema 3. Set `profile: "light"`, `parallel_mode: "off"`, `phase_count: 1`, `phases: {"P01": "PLAN.md#P01"}`, `dependencies: {"P01": []}` and normal skill assignments. Leave `parallel_tasks`, `parallel_groups` and `merges` empty. Preserve the helper's remaining metadata.
 
-Revisions inherit light mode unless explicitly changed. A natural request to expand to detailed mode creates a new revision using internal `--profile detailed` and the confirmed phase count; write the full detailed contract there. Converting a detailed plan to light requires an explicit one-task scope and `--phase-count 1`; carry every retained requirement, source snapshot and valid result forward. Preserve the original revision and label invalidated evidence for recheck.
+Revisions inherit light mode unless explicitly changed. A natural request to expand to detailed mode creates a new revision using internal `--profile detailed` and the confirmed phase count; write the full detailed contract there. Converting a detailed plan to light requires an explicit one-task scope and `--phase-count 1 --parallel-ready off`; carry every retained requirement, source snapshot and valid result forward. Preserve the original revision and label invalidated evidence for recheck.
 
 Run `check --package <exact-path>` and manually review acceptance coverage and the execution prompt. A passing structural check does not establish plan quality, agent adherence or implementation completion.

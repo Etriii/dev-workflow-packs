@@ -2,8 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
-- Add implementation-plan light packages with one task and combined specification, execution prompt and tracking; preserve source snapshots, saved policies and older package schemas.
-- Require implementation-plan feature-specific detail across model/effort settings, exact handoff reading sets, and source-bound verification evidence.
+- Add implementation-plan light packages, mandatory detailed-plan coverage, parallel dependency/ownership checks, worktree preparation and individually retrievable merge prompts in one Markdown file; preserve older package schemas and planning-only Git boundaries.
 - Make implementation-plan phase prompts and handoffs point to their package commit drafts for later explicit commit-only requests, with diff-backed message review.
 - Clarify report-builder placement in existing navigation and feature pages, screen-preview parity and limits, and BALE's optional source examples.
 - Require English responses and generated reports from every shipping skill, including requests written in Tagalog or Bisaya.

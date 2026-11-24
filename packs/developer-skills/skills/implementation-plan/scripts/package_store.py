@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import stat
 import subprocess
@@ -26,6 +26,8 @@ SHARED = (
 ORIGINAL_PLAN = "ORIGINAL_PLAN.md"
 SOURCE_DOCUMENT = "SOURCE_DOCUMENT.pdf"
 PHASE_ID = re.compile(r"P\d{2,}")
+MERGE_ID = re.compile(r"M\d{2,}")
+MERGE_FILE = "prompts/MERGE_PROMPTS.md"
 RUN_ID = re.compile(r"\d{8}T\d{6}Z-[0-9a-f]{12}")
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 COMMIT_BLOCK = re.compile(r"^```(?:text|commit)?[ \t]*\r?\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
@@ -224,7 +226,7 @@ def pdf_snapshot(path):
     return content
 
 
-def start(project, feature, max_phases=None, skills=None, skills_mode=None, commits=None, previous=None, source_plan=None, phase_count=None, source_document=None, test_scope=None, profile=None):
+def start(project, feature, max_phases=None, skills=None, skills_mode=None, commits=None, previous=None, source_plan=None, phase_count=None, source_document=None, test_scope=None, profile=None, parallel_mode=None):
     if source_plan and source_document:
         raise ValueError("Choose one source plan or source PDF")
     root, is_git = project_root(project)
@@ -265,12 +267,16 @@ def start(project, feature, max_phases=None, skills=None, skills_mode=None, comm
         phase_count = prior.get("phase_count")
     if profile is None:
         profile = prior.get("profile", "detailed") if prior else "detailed"
-    if profile not in ("detailed", "light"):
-        raise ValueError("Invalid planning profile")
+    if parallel_mode is None:
+        parallel_mode = prior.get("parallel_mode", "off") if prior else "off"
+    if profile not in ("detailed", "light") or parallel_mode not in ("off", "analysis", "worktree"):
+        raise ValueError("Invalid planning profile or parallel mode")
     if profile == "light":
-        if phase_count not in (None, 1):
-            raise ValueError("Light planning requires one phase")
+        if parallel_mode != "off" or phase_count not in (None, 1):
+            raise ValueError("Light planning requires one phase and parallel mode off")
         phase_count = 1
+    if parallel_mode == "worktree" and not is_git:
+        raise ValueError("Worktree planning requires a Git repository")
     names = validate_options(max_phases, skills, skills_mode, commits, phase_count, test_scope)
     original = None
     source = {"origin": "session"}
@@ -340,7 +346,9 @@ def start(project, feature, max_phases=None, skills=None, skills_mode=None, comm
             "skills": names, "skills_mode": skills_mode, "test_scope": test_scope,
             "commits": commits, "previous": str(prior_package) if prior_package else None,
             "phases": {}, "skill_assignments": {}, "source_plan": source,
-            "source_document": document, "profile": profile, "dependencies": {}}
+            "source_document": document, "profile": profile, "parallel_mode": parallel_mode,
+            "dependencies": {}, "parallel_groups": {}, "parallel_tasks": {},
+            "parallel_reason": "", "merges": {}}
     write_new(package / ".package.json", data)
     if original is not None:
         with (package / ORIGINAL_PLAN).open("xb") as stream:
@@ -367,7 +375,7 @@ def prompt_sections(path):
             elif token[0] == fence[0] and len(token) >= len(fence):
                 fence = None
         if fence is None and not marker and line.startswith("## "):
-            match = re.fullmatch(r"## (P\d{2,})\s*", line.strip())
+            match = re.fullmatch(r"## ([PM]\d{2,})\s*", line.strip())
             current = match[1] if match else None
             if current:
                 if current in sections:
@@ -403,25 +411,179 @@ def text_list(value, allow_empty=False):
             and len(value) == len(set(value)))
 
 
+def ancestors(graph, key):
+    result = set()
+    pending = list(graph[key])
+    while pending:
+        node = pending.pop()
+        if node not in result:
+            result.add(node)
+            pending.extend(graph[node])
+    return result
 
 
+def relative_owner(value):
+    path = PurePosixPath(value)
+    return (not path.is_absolute() and value not in ("", ".")
+            and not any(part.casefold() in ("..", ".git") for part in path.parts)
+            and not any(char in value for char in "\\:*?[]"))
 
 
-
-
-def inspect_profile(package, data, phases, files, errors):
+def inspect_modes(package, data, phases, files, errors):
     if data["schema_version"] < 3:
         return
-    profile = data.get("profile")
-    if profile not in ("detailed", "light"):
-        errors.append("Invalid planning profile")
+    profile, mode = data.get("profile"), data.get("parallel_mode")
+    if profile not in ("detailed", "light") or mode not in ("off", "analysis", "worktree"):
+        errors.append("Invalid planning profile or parallel mode")
         return
-    if profile == "light" and list(phases) != ["P01"]:
-        errors.append("Light planning requires one phase")
-    dependency_graph(data.get("dependencies"), phases, "phase dependencies", errors)
+    if profile == "light" and (mode != "off" or list(phases) != ["P01"]):
+        errors.append("Light planning requires one phase and parallel mode off")
+    graph = dependency_graph(data.get("dependencies"), phases, "phase dependencies", errors)
+    groups, tasks, merges = (data.get(name) for name in ("parallel_groups", "parallel_tasks", "merges"))
+    if not all(isinstance(item, dict) for item in (groups, tasks, merges)):
+        errors.append("Parallel groups, tasks and merges must be objects")
+        return
+    if mode == "off":
+        if groups or tasks or merges or (package / MERGE_FILE).exists():
+            errors.append("Sequential planning cannot contain parallel tasks or merges")
+        return
+    if not isinstance(data.get("parallel_reason"), str) or not data["parallel_reason"].strip():
+        errors.append("Parallel planning needs an evidence-based parallel_reason, including when no split is safe")
+    if set(tasks) != set(phases):
+        errors.append("Parallel tasks must describe every phase")
+        return
+    valid_tasks = True
+    task_roots = {}
+    for phase, task in tasks.items():
+        if (not isinstance(task, dict) or not text_list(task.get("owned_paths"))
+                or not text_list(task.get("write_resources"), allow_empty=True)
+                or not text_list(task.get("read_set")) or not isinstance(task.get("reason"), str)
+                or not task["reason"].strip()):
+            errors.append(f"Incomplete parallel task: {phase}")
+            valid_tasks = False
+            continue
+        if any(not relative_owner(item) for item in task["owned_paths"]):
+            errors.append(f"Ownership needs concrete repository-relative paths: {phase}")
+        repository = task.get("repository", str(package.parent.parent.parent))
+        if not isinstance(repository, str) or not Path(repository).is_absolute():
+            errors.append(f"Invalid task repository: {phase}")
+            valid_tasks = False
+        else:
+            task_roots[phase] = str(project_root(repository)[0]).casefold()
+        for item in task["read_set"]:
+            target = item.split("#", 1)[0]
+            if not relative_owner(target) or not regular(package / target).is_file():
+                errors.append(f"Missing or unsafe package read-set file: {phase}: {item}")
+    members = []
+    for group, selected in groups.items():
+        if (not re.fullmatch(r"G\d{2,}", group) or not text_list(selected)
+                or len(selected) < 2 or not set(selected) <= set(phases)):
+            errors.append(f"Invalid parallel group: {group}")
+            continue
+        members.extend(selected)
+        if not graph or not valid_tasks:
+            continue
+        for index, left in enumerate(selected):
+            for right in selected[index + 1:]:
+                if right in ancestors(graph, left) or left in ancestors(graph, right):
+                    errors.append(f"Dependent phases cannot run together: {group}: {left}, {right}")
+                if set(tasks[left]["write_resources"]) & set(tasks[right]["write_resources"]):
+                    errors.append(f"Shared mutable resource in {group}: {left}, {right}")
+                same_repo = task_roots[left] == task_roots[right]
+                if same_repo:
+                    for a in tasks[left]["owned_paths"]:
+                        for b in tasks[right]["owned_paths"]:
+                            a, b = PurePosixPath(a).as_posix().casefold(), PurePosixPath(b).as_posix().casefold()
+                            if a == b or a.startswith(b + "/") or b.startswith(a + "/"):
+                                errors.append(f"Overlapping ownership in {group}: {left}, {right}")
+    if len(members) != len(set(members)):
+        errors.append("A phase may belong to only one parallel group")
+    if mode != "worktree":
+        if merges or (package / MERGE_FILE).exists():
+            errors.append("Merge prompts require worktree mode")
+        return
+    directories, branches = [], []
+    for phase in set(members):
+        task = tasks[phase]
+        if not isinstance(task, dict):
+            continue
+        repository, directory, branch = (task.get(name) for name in ("repository", "worktree", "branch"))
+        if (not isinstance(repository, str) or not Path(repository).is_absolute()
+                or not isinstance(directory, str) or not Path(directory).is_absolute()
+                or not isinstance(branch, str) or not branch.strip()
+                or not isinstance(task.get("base_commit"), str)
+                or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", task["base_commit"])):
+            errors.append(f"Incomplete worktree identity: {phase}")
+            continue
+        repository, is_git = project_root(repository)
+        worktree = safe(directory)
+        if not is_git or git(repository, "check-ref-format", "--branch", branch).returncode:
+            errors.append(f"Invalid worktree repository or branch: {phase}")
+        if git(repository, "cat-file", "-e", task["base_commit"] + "^{commit}").returncode:
+            errors.append(f"Worktree baseline is not an existing commit: {phase}")
+        if worktree == repository or worktree.is_relative_to(repository) or repository.is_relative_to(worktree):
+            errors.append(f"Worktree must be separate from its source repository: {phase}")
+        directories.append(str(worktree).casefold())
+        branches.append((str(repository).casefold(), branch.casefold()))
+    if len(set(directories)) != len(directories) or len(set(branches)) != len(branches):
+        errors.append("Parallel worktrees and branches must be distinct")
+    for index, directory in enumerate(directories):
+        for other in directories[index + 1:]:
+            if Path(directory).is_relative_to(Path(other)) or Path(other).is_relative_to(Path(directory)):
+                errors.append("Parallel worktree directories cannot be nested")
+    merged = []
+    merge_graph = {}
+    for merge_id, merge in merges.items():
+        if (not MERGE_ID.fullmatch(merge_id) or not isinstance(merge, dict)
+                or not text_list(merge.get("phases")) or not set(merge["phases"]) <= set(members)
+                or not isinstance(merge.get("owner_phase"), str) or merge["owner_phase"] not in phases
+                or not isinstance(merge.get("target_branch"), str) or not merge["target_branch"].strip()
+                or not isinstance(merge.get("repository"), str) or not Path(merge["repository"]).is_absolute()
+                or not isinstance(merge.get("target_commit"), str)
+                or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", merge["target_commit"])):
+            errors.append(f"Invalid merge operation: {merge_id}")
+            continue
+        repository, is_git = project_root(merge["repository"])
+        if not is_git or git(repository, "check-ref-format", "--branch", merge["target_branch"]).returncode:
+            errors.append(f"Invalid merge repository or target branch: {merge_id}")
+        if git(repository, "cat-file", "-e", merge["target_commit"] + "^{commit}").returncode:
+            errors.append(f"Merge baseline is not an existing commit: {merge_id}")
+        if graph and not set(merge["phases"]) <= ancestors(graph, merge["owner_phase"]):
+            errors.append(f"Merge owner must depend on its source phases: {merge_id}")
+        for phase in merge["phases"]:
+            task = tasks[phase]
+            if (not isinstance(task, dict) or task.get("repository") != merge["repository"]
+                    or task.get("branch") == merge["target_branch"]):
+                errors.append(f"Merge source/target identity mismatch: {merge_id}: {phase}")
+        merged.extend(merge["phases"])
+        merge_graph[merge_id] = merge.get("depends_on")
+    if set(merged) != set(members) or len(merged) != len(set(merged)):
+        errors.append("Each isolated phase needs exactly one merge operation")
+    dependency_graph(merge_graph, merges, "merge dependencies", errors)
+    if merges:
+        path = regular(package / MERGE_FILE)
+        files.append(path)
+        for candidate in safe(package / "prompts").iterdir():
+            if candidate.name != path.name and (MERGE_ID.match(candidate.stem) or candidate.name.startswith("MERGE")):
+                errors.append("All merge prompts must use the single MERGE_PROMPTS.md file")
+        if not path.is_file():
+            errors.append(f"Missing {MERGE_FILE}")
+        else:
+            sections = prompt_sections(path)
+            if set(sections) != set(merges):
+                errors.append("Merge sections must match merge IDs exactly")
+            for merge_id, body in sections.items():
+                if not body.partition("\n")[2].strip():
+                    errors.append(f"Empty merge prompt: {merge_id}")
+    elif (package / MERGE_FILE).exists():
+        errors.append("Merge prompt file has no mapped operations")
 
 
 def stored_prompt(package, data, prompt_id):
+    if MERGE_ID.fullmatch(prompt_id):
+        if prompt_id not in data.get("merges", {}):
+            raise ValueError(f"Unknown merge: {prompt_id}")
+        return prompt_sections(package / MERGE_FILE)[prompt_id]
     name = (data.get("phases") or {}).get(prompt_id)
     if not name:
         raise ValueError(f"Unknown phase: {prompt_id}")
@@ -534,7 +696,7 @@ def inspect(package):
                 errors.append(f"Invalid skill assignment: {name}")
             elif data.get("skills_mode") == "all" and set(assigned) != set(phases):
                 errors.append(f"Skill is missing from an all-mode prompt: {name}")
-    inspect_profile(package, data, phases, files, errors)
+    inspect_modes(package, data, phases, files, errors)
     for path in files:
         if not path.is_file() or path.name == ORIGINAL_PLAN:
             continue
@@ -549,7 +711,8 @@ def inspect(package):
     return {"package": str(package), "status": data.get("status"), "phases": phases,
             "skills": data.get("skills"), "skill_assignments": data.get("skill_assignments"),
             "test_scope": test_scope, "profile": data.get("profile", "detailed"),
-            "dependencies": data.get("dependencies", {}), "errors": errors, "git_exclusion_verified": is_git}
+            "parallel_mode": data.get("parallel_mode", "off"), "dependencies": data.get("dependencies", {}),
+            "merges": data.get("merges", {}), "errors": errors, "git_exclusion_verified": is_git}
 
 
 def list_packages(project):
@@ -601,20 +764,21 @@ def main(argv=None):
     command.add_argument("--source-plan")
     command.add_argument("--source-document")
     command.add_argument("--profile", choices=("detailed", "light"))
+    command.add_argument("--parallel-ready", nargs="?", const="analysis", choices=("off", "analysis", "worktree"))
     command = commands.add_parser("list")
     command.add_argument("--project", required=True)
     for name in ("check", "status", "skills", "prompt"):
         command = commands.add_parser(name)
         command.add_argument("--package", required=True)
         if name == "prompt":
-            command.add_argument("--phase", required=True, help="Stored Pxx execution prompt ID")
+            command.add_argument("--phase", required=True, help="Stored Pxx execution or Mxx merge prompt ID")
     args = parser.parse_args(argv)
     try:
         if args.action == "start":
             result = start(args.project, args.feature, args.max_phases, args.skills,
                            args.skills_mode, args.commits, args.previous, args.source_plan,
                             args.phase_count, args.source_document, args.test_scope,
-                            args.profile)
+                            args.profile, args.parallel_ready)
         elif args.action == "list":
             result = {"packages": list_packages(args.project)}
         else:

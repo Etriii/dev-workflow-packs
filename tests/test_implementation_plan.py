@@ -425,7 +425,7 @@ class PackageStoreTests(unittest.TestCase):
         for agent_dir in (".agents", ".claude"):
             installed = self.root / agent_dir / "skills/implementation-plan/assets/config.json"
             self.assertEqual(installed.read_bytes(), source.read_bytes())
-            for relative in ("references/light-planning.md", "scripts/package_store.py"):
+            for relative in ("references/light-planning.md", "references/parallel-planning.md", "scripts/package_store.py"):
                 self.assertEqual((installed.parent.parent / relative).read_bytes(), (SCRIPT.parent.parent / relative).read_bytes())
 
     def test_cli_accepts_auto_commit_policy(self):
@@ -476,7 +476,49 @@ class PackageStoreTests(unittest.TestCase):
         metadata.update(phases={"P01": "PLAN.md#P01"}, dependencies={"P01": []}, status="ready")
         (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
 
+    def save_parallel(self, package, worktrees=False):
+        self.save_complete(package)
+        metadata = json.loads((package / ".package.json").read_text())
+        metadata.update(
+            status="ready", phases={"P01": "P01_BUILD.md", "P02": "P02_BUILD.md", "P03": "P03_VERIFY.md"},
+            dependencies={"P01": [], "P02": [], "P03": ["P01", "P02"]},
+            parallel_groups={"G01": ["P01", "P02"]},
+            parallel_reason="Independent request and reporting owners; integration waits for both.",
+            parallel_tasks={},
+        )
+        for phase in metadata["phases"]:
+            (package / "prompts" / metadata["phases"][phase]).write_text(f"Implement {phase} only.\n", encoding="utf-8")
+            metadata["parallel_tasks"][phase] = {
+                "owned_paths": [f"src/{phase}.py"], "write_resources": [f"test-db:{phase}"],
+                "read_set": ["PLAN.md", "CONTRACTS.md"], "reason": f"Own {phase}'s isolated component.",
+            }
+        if worktrees:
+            base = self.git("rev-parse", "HEAD")
+            for phase in ("P01", "P02"):
+                metadata["parallel_tasks"][phase].update(
+                    repository=str(self.root), base_commit=base, branch=f"task/{phase}",
+                    worktree=str(self.root.parent / f"{self.root.name}-{phase}"),
+                )
+            metadata["merges"] = {
+                f"M{index:02d}": {"phases": [phase], "owner_phase": "P03", "repository": str(self.root),
+                                  "target_branch": self.git("branch", "--show-current"), "target_commit": base,
+                                  "depends_on": [] if index == 1 else ["M01"]}
+                for index, phase in enumerate(("P01", "P02"), 1)
+            }
+            (package / store.MERGE_FILE).write_text(
+                "# Merge prompts\n\n## M01\n\nIntegrate the request correction; verify and stop.\n\n"
+                "```text\n## M99\nThis is a fenced example, not a merge section.\n```\n\n---\n\n"
+                "## M02\n\nIntegrate reporting after M01; verify and stop.\n", encoding="utf-8")
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        return metadata
 
+    def initialize_commit(self):
+        self.init_git()
+        self.git("config", "user.name", "Package Tests")
+        self.git("config", "user.email", "package-tests@example.invalid")
+        (self.root / "base.txt").write_text("base\n", encoding="utf-8")
+        self.git("add", "base.txt")
+        self.git("commit", "-qm", "test: establish integration baseline")
 
     def test_light_package_has_one_document_for_plan_execution_and_tracking(self):
         self.init_git()
@@ -503,7 +545,9 @@ class PackageStoreTests(unittest.TestCase):
         self.assertEqual(json.loads((first / ".package.json").read_text())["profile"], "light")
 
     def test_invalid_modes_stop_before_output_or_ignore_writes(self):
-        for options in ({"profile": "light", "phase_count": 2}, {"profile": "unknown"}, {"max_phases": 0}):
+        for options in ({"profile": "light", "parallel_mode": "analysis"},
+                        {"profile": "light", "phase_count": 2}, {"parallel_mode": "unknown"},
+                        {"parallel_mode": "worktree"}):
             with self.subTest(options=options), self.assertRaises(ValueError):
                 store.start(self.root, "Invalid", **options)
             self.assertFalse((self.root / store.OUTPUT).exists())
@@ -515,29 +559,152 @@ class PackageStoreTests(unittest.TestCase):
         metadata = json.loads((package / ".package.json").read_text())
         for schema in (1, 2):
             metadata["schema_version"] = schema
-            for name in ("profile", "dependencies"):
+            for name in ("profile", "parallel_mode", "dependencies", "parallel_tasks", "parallel_groups", "merges", "parallel_reason"):
                 metadata.pop(name, None)
             (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
             before = (package / ".package.json").read_bytes()
             self.assertEqual(store.inspect(package)["errors"], [])
             self.assertEqual((package / ".package.json").read_bytes(), before)
 
+    def test_parallel_analysis_checks_dependencies_and_shared_owners(self):
+        package = Path(store.start(self.root, "Independent work", parallel_mode="analysis")["package"])
+        metadata = self.save_parallel(package)
+        self.assertEqual(store.inspect(package)["errors"], [])
+        invalid = [
+            ("dependencies", {"P01": ["P03"], "P02": [], "P03": ["P01"]}, "Cycle"),
+            ("dependencies", {"P01": [], "P02": ["P01"], "P03": ["P02"]}, "cannot run together"),
+            ("dependencies", {"P01": [], "P02": ["P99"], "P03": []}, "Invalid phase dependencies"),
+        ]
+        for key, value, error in invalid:
+            changed = dict(metadata, **{key: value})
+            (package / ".package.json").write_text(json.dumps(changed), encoding="utf-8")
+            self.assertTrue(any(error in item for item in store.inspect(package)["errors"]))
+        for field, value, error in (("owned_paths", ["src/P01.py"], "Overlapping ownership"),
+                                    ("write_resources", ["test-db:P01"], "Shared mutable resource"),
+                                    ("read_set", ["missing.md"], "read-set file")):
+            changed = json.loads(json.dumps(metadata))
+            changed["parallel_tasks"]["P02"][field] = value
+            (package / ".package.json").write_text(json.dumps(changed), encoding="utf-8")
+            self.assertTrue(any(error in item for item in store.inspect(package)["errors"]))
 
+    def test_parallel_planning_can_record_no_safe_split(self):
+        package = Path(store.start(self.root, "Coupled work", parallel_mode="analysis")["package"])
+        metadata = self.save_parallel(package)
+        metadata["parallel_groups"] = {}
+        metadata["parallel_reason"] = "All components share a mutable service; execute sequentially."
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        self.assertEqual(store.inspect(package)["errors"], [])
 
+    def test_repository_and_path_aliases_cannot_hide_overlapping_ownership(self):
+        package = Path(store.start(self.root, "Independent work", parallel_mode="analysis")["package"])
+        metadata = self.save_parallel(package)
+        metadata["parallel_tasks"]["P02"]["repository"] = str(self.root) + "/"
+        metadata["parallel_tasks"]["P02"]["owned_paths"] = ["src/./P01.py"]
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        self.assertTrue(any("Overlapping ownership" in item for item in store.inspect(package)["errors"]))
 
-
-
-
-
-
-
-
-    def test_cli_selects_light_profile(self):
+    def test_worktree_plan_and_merge_retrieval_leave_git_untouched(self):
+        self.initialize_commit()
+        package = Path(store.start(self.root, "Isolated tasks", parallel_mode="worktree")["package"])
+        self.save_parallel(package, worktrees=True)
+        before = (self.git("status", "--porcelain"), self.git("branch"), self.git("worktree", "list", "--porcelain"))
+        contents = {p.relative_to(package): p.read_bytes() for p in package.rglob("*") if p.is_file()}
+        self.assertEqual(store.inspect(package)["errors"], [])
         output = io.StringIO()
         with redirect_stdout(output):
-            self.assertEqual(store.main(["start", "--project", str(self.root), "--feature", "Task", "--profile", "light"]), 0)
-        data = json.loads((Path(json.loads(output.getvalue())["package"]) / ".package.json").read_text())
-        self.assertEqual(data["profile"], "light")
+            self.assertEqual(store.main(["prompt", "--package", str(package), "--phase", "M01"]), 0)
+        self.assertIn("request correction", output.getvalue())
+        self.assertNotIn("Integrate reporting", output.getvalue())
+        self.assertEqual(contents, {p.relative_to(package): p.read_bytes() for p in package.rglob("*") if p.is_file()})
+        self.assertEqual(before, (self.git("status", "--porcelain"), self.git("branch"), self.git("worktree", "list", "--porcelain")))
+        self.assertEqual([p.name for p in (package / "prompts").glob("MERGE*")], ["MERGE_PROMPTS.md"])
+
+    def test_merge_file_sections_and_dependencies_are_checked(self):
+        self.initialize_commit()
+        package = Path(store.start(self.root, "Isolated tasks", parallel_mode="worktree")["package"])
+        metadata = self.save_parallel(package, worktrees=True)
+        path = package / store.MERGE_FILE
+        original = path.read_text(encoding="utf-8")
+        path.write_text(original.replace("## M02", "## M03"), encoding="utf-8")
+        self.assertIn("Merge sections must match merge IDs exactly", store.inspect(package)["errors"])
+        path.write_text(original + "\n## M01\nDuplicate\n", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "Duplicate prompt section"):
+            store.inspect(package)
+        path.write_text(original, encoding="utf-8")
+        metadata["merges"]["M01"]["depends_on"] = ["M02"]
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        self.assertIn("Cycle in merge dependencies", store.inspect(package)["errors"])
+
+    def test_worktree_identity_and_merge_coverage_are_checked(self):
+        self.initialize_commit()
+        package = Path(store.start(self.root, "Isolated tasks", parallel_mode="worktree")["package"])
+        metadata = self.save_parallel(package, worktrees=True)
+        metadata["parallel_tasks"]["P02"]["worktree"] = metadata["parallel_tasks"]["P01"]["worktree"]
+        metadata["merges"]["M02"]["phases"] = ["P01"]
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        errors = store.inspect(package)["errors"]
+        self.assertIn("Parallel worktrees and branches must be distinct", errors)
+        self.assertIn("Each isolated phase needs exactly one merge operation", errors)
+
+    def test_worktree_baselines_and_merge_owner_prerequisites_are_checked(self):
+        self.initialize_commit()
+        package = Path(store.start(self.root, "Isolated tasks", parallel_mode="worktree")["package"])
+        metadata = self.save_parallel(package, worktrees=True)
+        metadata["parallel_tasks"]["P01"]["base_commit"] = "0" * 40
+        metadata["merges"]["M01"]["target_commit"] = "0" * 40
+        metadata["dependencies"]["P03"] = ["P02"]
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        errors = store.inspect(package)["errors"]
+        for message in ("Worktree baseline is not an existing commit: P01",
+                        "Merge baseline is not an existing commit: M01",
+                        "Merge owner must depend on its source phases: M01"):
+            self.assertIn(message, errors)
+
+    def test_multiple_merge_files_and_nested_worktrees_are_rejected(self):
+        self.initialize_commit()
+        package = Path(store.start(self.root, "Isolated tasks", parallel_mode="worktree")["package"])
+        metadata = self.save_parallel(package, worktrees=True)
+        metadata["parallel_tasks"]["P02"]["worktree"] = str(Path(metadata["parallel_tasks"]["P01"]["worktree"]) / "nested")
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        (package / "prompts/M01_EXTRA.md").write_text("Duplicate integration file\n", encoding="utf-8")
+        errors = store.inspect(package)["errors"]
+        self.assertIn("Parallel worktree directories cannot be nested", errors)
+        self.assertIn("All merge prompts must use the single MERGE_PROMPTS.md file", errors)
+
+    def test_parallel_revision_inherits_mode_policies_and_can_disable_parallel(self):
+        self.initialize_commit()
+        package = Path(store.start(self.root, "Isolated tasks", parallel_mode="worktree", skills="migration", max_phases=4, phase_count=3)["package"])
+        revised = Path(store.start(self.root, "Ignored", previous=package)["package"])
+        data = json.loads((revised / ".package.json").read_text())
+        self.assertEqual((data["parallel_mode"], data["skills"], data["max_phases"], data["phase_count"]),
+                         ("worktree", ["migration"], 4, 3))
+        sequential = Path(store.start(self.root, "Ignored", previous=package, parallel_mode="off")["package"])
+        data = json.loads((sequential / ".package.json").read_text())
+        self.assertEqual(data["parallel_mode"], "off")
+        self.assertEqual(data["merges"], {})
+
+    def test_malformed_counts_and_merge_owner_report_errors_instead_of_crashing(self):
+        self.initialize_commit()
+        package = Path(store.start(self.root, "Isolated tasks", parallel_mode="worktree")["package"])
+        metadata = self.save_parallel(package, worktrees=True)
+        metadata["max_phases"] = "three"
+        metadata["phase_count"] = []
+        metadata["merges"]["M01"]["owner_phase"] = []
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(store.main(["check", "--package", str(package)]), 1)
+        self.assertIn("Invalid maximum phase count", output.getvalue())
+        self.assertIn("Invalid merge operation: M01", output.getvalue())
+
+    def test_cli_selects_light_and_parallel_profiles(self):
+        for arguments, expected in ((["--profile", "light"], ("light", "off")),
+                                    (["--parallel-ready"], ("detailed", "analysis"))):
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(store.main(["start", "--project", str(self.root), "--feature", "Task"] + arguments), 0)
+            data = json.loads((Path(json.loads(output.getvalue())["package"]) / ".package.json").read_text())
+            self.assertEqual((data["profile"], data["parallel_mode"]), expected)
 
     def test_read_only_commands_do_not_change_package_and_prompt_requires_ready(self):
         self.init_git()
