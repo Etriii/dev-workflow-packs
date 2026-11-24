@@ -146,7 +146,7 @@ def locate(package):
     if marker != STORE_MARKER:
         raise ValueError("Unrecognized feature folder ownership")
     data = read_json(package / ".package.json")
-    if data.get("schema_version") not in (1, 2) or data.get("owner") != OWNER:
+    if data.get("schema_version") not in (1, 2, 3) or data.get("owner") != OWNER:
         raise ValueError("Unrecognized package metadata")
     root, is_git = project_root(package.parent.parent.parent)
     if package.parent.parent != safe(root / output_name):
@@ -224,7 +224,7 @@ def pdf_snapshot(path):
     return content
 
 
-def start(project, feature, max_phases=None, skills="", skills_mode=None, commits=None, previous=None, source_plan=None, phase_count=None, source_document=None, test_scope=None):
+def start(project, feature, max_phases=None, skills=None, skills_mode=None, commits=None, previous=None, source_plan=None, phase_count=None, source_document=None, test_scope=None, profile=None):
     if source_plan and source_document:
         raise ValueError("Choose one source plan or source PDF")
     root, is_git = project_root(project)
@@ -257,6 +257,20 @@ def start(project, feature, max_phases=None, skills="", skills_mode=None, commit
         commits = prior.get("commits", "off") if prior else defaults["commits"]
     if skills_mode is None:
         skills_mode = prior.get("skills_mode", "auto") if prior else defaults["skills_mode"]
+    if skills is None:
+        skills = ",".join(prior.get("skills", [])) if prior else ""
+    if max_phases is None and prior:
+        max_phases = prior.get("max_phases")
+    if phase_count is None and prior:
+        phase_count = prior.get("phase_count")
+    if profile is None:
+        profile = prior.get("profile", "detailed") if prior else "detailed"
+    if profile not in ("detailed", "light"):
+        raise ValueError("Invalid planning profile")
+    if profile == "light":
+        if phase_count not in (None, 1):
+            raise ValueError("Light planning requires one phase")
+        phase_count = 1
     names = validate_options(max_phases, skills, skills_mode, commits, phase_count, test_scope)
     original = None
     source = {"origin": "session"}
@@ -320,13 +334,13 @@ def start(project, feature, max_phases=None, skills="", skills_mode=None, commit
             continue
     else:
         raise ValueError("Could not allocate a unique package directory")
-    data = {"schema_version": 2, "owner": OWNER, "feature": feature, "status": "draft",
+    data = {"schema_version": 3, "owner": OWNER, "feature": feature, "status": "draft",
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "max_phases": max_phases, "phase_count": phase_count,
             "skills": names, "skills_mode": skills_mode, "test_scope": test_scope,
             "commits": commits, "previous": str(prior_package) if prior_package else None,
             "phases": {}, "skill_assignments": {}, "source_plan": source,
-            "source_document": document}
+            "source_document": document, "profile": profile, "dependencies": {}}
     write_new(package / ".package.json", data)
     if original is not None:
         with (package / ORIGINAL_PLAN).open("xb") as stream:
@@ -334,8 +348,86 @@ def start(project, feature, max_phases=None, skills="", skills_mode=None, commit
     if document_bytes is not None:
         with (package / SOURCE_DOCUMENT).open("xb") as stream:
             stream.write(document_bytes)
-    (package / "prompts").mkdir()
+    if profile != "light":
+        (package / "prompts").mkdir()
     return {"package": str(package), "git_exclusion_verified": is_git, "ignore_rule": rule}
+
+
+def prompt_sections(path):
+    """Extract addressable level-two sections without interpreting fenced examples."""
+    sections = {}
+    current = None
+    fence = None
+    for line in regular(path).read_text(encoding="utf-8").splitlines(keepends=True):
+        marker = re.match(r"^\s*(`{3,}|~{3,})", line)
+        if marker:
+            token = marker[1]
+            if fence is None:
+                fence = token
+            elif token[0] == fence[0] and len(token) >= len(fence):
+                fence = None
+        if fence is None and not marker and line.startswith("## "):
+            match = re.fullmatch(r"## (P\d{2,})\s*", line.strip())
+            current = match[1] if match else None
+            if current:
+                if current in sections:
+                    raise ValueError(f"Duplicate prompt section: {current} in {path.name}")
+                sections[current] = []
+        if current:
+            sections[current].append(line)
+    return {key: "".join(lines) for key, lines in sections.items()}
+
+
+def dependency_graph(value, ids, label, errors):
+    if not isinstance(value, dict) or set(value) != set(ids):
+        errors.append(f"{label} must map every ID exactly once")
+        return {}
+    for key, parents in value.items():
+        if (not isinstance(parents, list) or any(not isinstance(item, str) for item in parents)
+                or len(parents) != len(set(parents)) or not set(parents) <= set(ids) or key in parents):
+            errors.append(f"Invalid {label}: {key}")
+            return {}
+    pending = set(ids)
+    while pending:
+        ready = {key for key in pending if not set(value[key]) & pending}
+        if not ready:
+            errors.append(f"Cycle in {label}")
+            return {}
+        pending -= ready
+    return value
+
+
+def text_list(value, allow_empty=False):
+    return (isinstance(value, list) and (allow_empty or bool(value))
+            and all(isinstance(item, str) and item.strip() for item in value)
+            and len(value) == len(set(value)))
+
+
+
+
+
+
+
+
+def inspect_profile(package, data, phases, files, errors):
+    if data["schema_version"] < 3:
+        return
+    profile = data.get("profile")
+    if profile not in ("detailed", "light"):
+        errors.append("Invalid planning profile")
+        return
+    if profile == "light" and list(phases) != ["P01"]:
+        errors.append("Light planning requires one phase")
+    dependency_graph(data.get("dependencies"), phases, "phase dependencies", errors)
+
+
+def stored_prompt(package, data, prompt_id):
+    name = (data.get("phases") or {}).get(prompt_id)
+    if not name:
+        raise ValueError(f"Unknown phase: {prompt_id}")
+    if data.get("profile") == "light":
+        return prompt_sections(package / "PLAN.md")[prompt_id]
+    return regular(package / "prompts" / name).read_text(encoding="utf-8")
 
 
 def inspect(package):
@@ -347,24 +439,25 @@ def inspect(package):
                 errors.append(f"Output is not ignored: {path.relative_to(root)}")
         if checked_git(root, "ls-files", "--", package.parent.relative_to(root).as_posix()).strip():
             errors.append("Package output is tracked")
-    required = SHARED + ((ORIGINAL_PLAN,) if data["schema_version"] == 2 else ())
+    light = data.get("profile") == "light" and data["schema_version"] >= 3
+    required = (("PLAN.md",) if light else SHARED) + ((ORIGINAL_PLAN,) if data["schema_version"] >= 2 else ())
     files = [package / name for name in required]
     for name, path in zip(required, files):
         if not regular(path).is_file():
             errors.append(f"Missing {name}")
         elif not path.read_text(encoding="utf-8").strip():
             errors.append(f"Empty {name}")
-    messages = regular(package / "COMMIT_MESSAGES.md")
+    messages = regular(package / ("PLAN.md" if light else "COMMIT_MESSAGES.md"))
     if messages.is_file():
         blocks = [block.replace("\r\n", "\n").strip() for block in COMMIT_BLOCK.findall(messages.read_text(encoding="utf-8"))]
         drafts = [block for block in blocks if block and COMMIT_SUBJECT.fullmatch(block.splitlines()[0])]
         if not drafts:
-            errors.append("COMMIT_MESSAGES.md needs copyable Conventional Commit blocks with detailed bodies; subject-only lists are incomplete")
+            errors.append(f"{messages.name} needs copyable Conventional Commit blocks with detailed bodies; subject-only lists are incomplete")
         for draft in drafts:
             subject, _, body = draft.partition("\n\n")
             if not body.strip():
                 errors.append(f"Commit message needs a body: {subject}")
-    if data["schema_version"] == 2:
+    if data["schema_version"] >= 2:
         source = data.get("source_plan")
         if not isinstance(source, dict) or source.get("origin") not in ("file", "session"):
             errors.append("Invalid source plan metadata")
@@ -393,17 +486,33 @@ def inspect(package):
     phases = data.get("phases")
     if not isinstance(phases, dict) or not phases:
         errors.append("No phase prompt map")
+        phases = {}
     else:
-        if data.get("max_phases") is not None and len(phases) > data["max_phases"]:
+        cap, count = data.get("max_phases"), data.get("phase_count")
+        if cap is not None and (type(cap) is not int or cap < 1):
+            errors.append("Invalid maximum phase count")
+        elif cap is not None and len(phases) > cap:
             errors.append("Phase count exceeds maximum")
-        if data["schema_version"] == 2 and data.get("phase_count") is not None and len(phases) != data["phase_count"]:
+        if count is not None and (type(count) is not int or count < 1):
+            errors.append("Invalid selected phase count")
+        elif data["schema_version"] >= 2 and count is not None and len(phases) != count:
             errors.append("Phase count differs from selected count")
         expected_ids = [f"P{index:02d}" for index in range(1, len(phases) + 1)]
         if list(phases) != expected_ids:
             errors.append("Phase IDs must be ordered and contiguous from P01")
-        if len(set(phases.values())) != len(phases):
+        if any(not isinstance(value, str) for value in phases.values()):
+            errors.append("Phase prompt mappings must be strings")
+        elif len(set(phases.values())) != len(phases):
             errors.append("Phase prompts must have distinct files")
         for phase, name in phases.items():
+            if light:
+                if phase != "P01" or name != "PLAN.md#P01":
+                    errors.append("Light prompt must map P01 to PLAN.md#P01")
+                elif (package / "PLAN.md").is_file():
+                    section = prompt_sections(package / "PLAN.md").get("P01", "")
+                    if not section.partition("\n")[2].strip():
+                        errors.append("Missing or empty light execution section P01")
+                continue
             if not PHASE_ID.fullmatch(phase) or not isinstance(name, str) or not re.fullmatch(r"P\d{2,}_[A-Z0-9_]+\.md", name):
                 errors.append(f"Invalid phase prompt mapping: {phase}")
                 continue
@@ -415,16 +524,17 @@ def inspect(package):
                 errors.append(f"Prompt does not identify {phase}: {name}")
     assignments = data.get("skill_assignments")
     names = data.get("skills")
-    if not isinstance(names, list) or not isinstance(assignments, dict) or set(assignments) != set(names):
+    if not text_list(names, allow_empty=True) or not isinstance(assignments, dict) or set(assignments) != set(names):
         errors.append("Skill assignments do not match selected skills")
     else:
         for name, assignment in assignments.items():
             assigned = assignment.get("phases") if isinstance(assignment, dict) else None
             reason = assignment.get("reason") if isinstance(assignment, dict) else None
-            if not isinstance(assigned, list) or not assigned or not set(assigned) <= set(phases or ()) or not isinstance(reason, str) or not reason.strip():
+            if not text_list(assigned) or not set(assigned) <= set(phases or ()) or not isinstance(reason, str) or not reason.strip():
                 errors.append(f"Invalid skill assignment: {name}")
             elif data.get("skills_mode") == "all" and set(assigned) != set(phases):
                 errors.append(f"Skill is missing from an all-mode prompt: {name}")
+    inspect_profile(package, data, phases, files, errors)
     for path in files:
         if not path.is_file() or path.name == ORIGINAL_PLAN:
             continue
@@ -438,7 +548,8 @@ def inspect(package):
                 errors.append(f"Broken local link in {path.name}: {raw}")
     return {"package": str(package), "status": data.get("status"), "phases": phases,
             "skills": data.get("skills"), "skill_assignments": data.get("skill_assignments"),
-            "test_scope": test_scope, "errors": errors, "git_exclusion_verified": is_git}
+            "test_scope": test_scope, "profile": data.get("profile", "detailed"),
+            "dependencies": data.get("dependencies", {}), "errors": errors, "git_exclusion_verified": is_git}
 
 
 def list_packages(project):
@@ -482,44 +593,43 @@ def main(argv=None):
     command.add_argument("--feature", required=True)
     command.add_argument("--max-phases", type=int)
     command.add_argument("--phase-count", type=int)
-    command.add_argument("--skills", default="")
+    command.add_argument("--skills")
     command.add_argument("--skills-mode", choices=("auto", "all"))
     command.add_argument("--commits", choices=("off", "scoped", "auto"))
     command.add_argument("--test-scope", choices=("focused", "full"))
     command.add_argument("--previous")
     command.add_argument("--source-plan")
     command.add_argument("--source-document")
+    command.add_argument("--profile", choices=("detailed", "light"))
     command = commands.add_parser("list")
     command.add_argument("--project", required=True)
     for name in ("check", "status", "skills", "prompt"):
         command = commands.add_parser(name)
         command.add_argument("--package", required=True)
         if name == "prompt":
-            command.add_argument("--phase", required=True)
+            command.add_argument("--phase", required=True, help="Stored Pxx execution prompt ID")
     args = parser.parse_args(argv)
     try:
         if args.action == "start":
             result = start(args.project, args.feature, args.max_phases, args.skills,
                            args.skills_mode, args.commits, args.previous, args.source_plan,
-                           args.phase_count, args.source_document, args.test_scope)
+                            args.phase_count, args.source_document, args.test_scope,
+                            args.profile)
         elif args.action == "list":
             result = {"packages": list_packages(args.project)}
         else:
             result = inspect(args.package)
             if args.action == "prompt":
-                name = (result["phases"] or {}).get(args.phase)
-                if not name:
-                    raise ValueError(f"Unknown phase: {args.phase}")
                 if result["errors"]:
                     raise ValueError("Package has validation errors")
                 if result["status"] != "ready":
                     raise ValueError("Package is still a draft")
-                print(regular(Path(args.package) / "prompts" / name).read_text(encoding="utf-8"))
+                print(stored_prompt(safe(args.package), read_json(Path(args.package) / ".package.json"), args.phase))
                 return 0
             if args.action == "skills":
                 result = {key: result[key] for key in ("package", "skills", "skill_assignments")}
             if args.action == "status":
-                progress = regular(Path(args.package) / "PROGRESS.md")
+                progress = regular(Path(args.package) / ("PLAN.md" if result["profile"] == "light" else "PROGRESS.md"))
                 result["progress"] = progress.read_text(encoding="utf-8") if progress.is_file() else None
         print(json.dumps(result, indent=2))
         return 1 if args.action == "check" and result["errors"] else 0

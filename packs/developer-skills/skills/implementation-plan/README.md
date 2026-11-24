@@ -1,6 +1,6 @@
 # Implementation Plan
 
-Start from an existing Codex or Claude Markdown plan, a PDF requirements brief with no plan yet, or a task described in chat. The skill asks planning questions, recommends compact and balanced phase counts, then presents a detailed implementation plan in chat or saves a detailed phase package. It never implements application changes. A saved package contains shared specifications, separate one-phase prompts, acceptance checks, progress and handoff.
+Start from an existing Codex or Claude Markdown plan, a PDF requirements brief with no plan yet, or a task described in chat. Default planning is detailed; `--light` reduces documentation for one small task. The skill presents a plan in chat or saves an ignored package. It never implements application changes, creates branches/worktrees, merges or cleans up Git work. Default planning preserves your current branch rather than switching to main.
 
 Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
 
@@ -32,7 +32,7 @@ $implementation-plan --skills migration,verify-and-stop --max-phases 4 --test-sc
 
 The named skills must be installed and relevant; the skill reads their instructions before assigning or using them.
 
-The skill inspects the plan and current source before asking. It **always** asks you to choose phase sizing:
+The skill inspects the plan and current source before asking. Detailed planning asks you to choose phase sizing; explicit `--light` uses one task and skips this question:
 
 | Choice | Meaning |
 |---|---|
@@ -40,7 +40,7 @@ The skill inspects the plan and current source before asking. It **always** asks
 | **Balanced** | Use the recommended exact count with more room for implementation and verification. |
 | **Custom maximum** | Supply a positive hard cap, such as 4; the skill proposes and confirms an exact count of at most 4. |
 
-The recommendations include the work and checks that fit each count. A one-phase option appears when the work can reasonably finish in one session. `--max-phases N` pre-fills Custom maximum but does not skip the question. It also **always** asks you to select one planning output:
+The recommendations include implementation, checks and integration work. A one-phase option appears when that work fits one session. In detailed mode, `--max-phases N` pre-fills Custom maximum but does not skip confirmation. The skill also resolves one planning output, honoring an explicit choice already made and asking otherwise:
 
 | Choice | Effect | Recommendation |
 |---|---|---|
@@ -51,9 +51,9 @@ Other questions concern only decisions the plan and source cannot settle, such a
 
 You can combine this skill with Codex or Claude's built-in Plan mode: finish its questions and use the agreed plan as this skill's input, either in the same conversation or as a saved file. These two output choices are the skill's own question; they do not change the host's built-in menu. While the host remains in read-only Plan mode, the skill can ask and plan but cannot save package files. For a package selection, the host plan must make package creation and checking its only executable steps. The future application phases are content to write into the package, not steps for the host's **Implement plan** action. After the package is created, “go ahead” or “implement the plan” is ambiguous; specify `Implement P01 from <package-path>` in a separate request or invoke the stored prompt directly. Do not invoke `$implementation-plan` for that implementation request.
 
-Normal outputs require feature-specific requirements and observable acceptance, current source evidence and unknowns, responsible components and dependencies, shared business/API/data/permission contracts, failure paths, actual verification commands or missing prerequisites, and stop/recovery conditions. This is mandatory regardless of model, effort setting or terse chat style. More text does not prove quality, and instructions cannot guarantee equal correctness across models. Neither output claims unrun implementation proof. Handoffs name the next task's exact reading set; evidence identifies the revision or dirty changes and actual commands it covered, then is revalidated when affected source changes.
+Normal outputs require feature-specific requirements and observable acceptance, current source evidence and unknowns, responsible components and dependencies, shared business/API/data/permission contracts, failure paths, actual verification commands or missing prerequisites, and stop/recovery conditions. This is mandatory regardless of model, effort setting or terse chat style; only explicit light mode reduces document structure. More text does not prove quality, and instructions cannot guarantee equal correctness across models. Neither output claims unrun implementation proof. Handoffs name the next task's exact reading set; evidence identifies the revision or dirty changes and actual commands it covered, then is revalidated when affected source changes.
 
-Every saved package has `ORIGINAL_PLAN.md`, `README.md`, `PLAN.md`, `CONTRACTS.md`, `PHASES.md`, `PROMPTS.md`, `RUNBOOK.md`, `ACCEPTANCE.md`, `PROGRESS.md`, `HANDOFF.md`, `BLOCKERS.md`, `COMMIT_MESSAGES.md`, and a separate file under `prompts/` for each phase. A supplied Markdown plan is copied byte for byte into `ORIGINAL_PLAN.md`; answers go in `PLAN.md`. For PDF input, the original PDF is copied byte for byte into `SOURCE_DOCUMENT.pdf` and the agreed working plan goes into `ORIGINAL_PLAN.md`. Without a file, the agreed session plan becomes `ORIGINAL_PLAN.md`. Initially, unexecuted checks remain `NOT_RUN`.
+Every detailed package has `ORIGINAL_PLAN.md`, `README.md`, `PLAN.md`, `CONTRACTS.md`, `PHASES.md`, `PROMPTS.md`, `RUNBOOK.md`, `ACCEPTANCE.md`, `PROGRESS.md`, `HANDOFF.md`, `BLOCKERS.md`, `COMMIT_MESSAGES.md`, and separate phase files under `prompts/`. Light packages use the smaller layout below. In either profile a supplied Markdown plan is copied byte for byte into `ORIGINAL_PLAN.md`; answers go in `PLAN.md`. For PDF input, the original PDF is copied byte for byte into `SOURCE_DOCUMENT.pdf` and the agreed working plan goes into `ORIGINAL_PLAN.md`. Without a file, the agreed session plan becomes `ORIGINAL_PLAN.md`. Initially, unexecuted checks remain `NOT_RUN`.
 
 `COMMIT_MESSAGES.md` must contain detailed, copyable messages for the planned work, split by repository and distinct feature. Each message has a Conventional Commit subject and a substantive body explaining the intended behavior, why it matters, planned changes, and relevant verification or migration notes. At planning time, label unrun checks `NOT_RUN` and avoid invented file paths or hashes. When implementation happens, update messages from the actual diff and checks. A list of one-line subjects is incomplete. This requirement applies with every commit policy, including the built-in default with commits off. Terse chat styles do not shorten persisted commit messages.
 
@@ -64,6 +64,48 @@ Agent chat, after the selected phase has finished (replace `<package-path>` with
 ```text
 Commit the completed work from <package-path>. Use its COMMIT_MESSAGES.md after checking the actual changes and verification.
 ```
+
+In light packages, the commit drafts, progress and handoff live in named `PLAN.md` sections instead of separate files. Use that plan's commit-draft section for the same commit-only workflow.
+
+## Choose a planning mode
+
+Examples here are agent-chat requests after opening the target project and refreshing the installed skill. Replace task descriptions, `<package-path>` and project paths with actual values. Claude Code uses `/implementation-plan` instead of `$implementation-plan`.
+
+| Selection | Effect | Boundary |
+|---|---|---|
+| No mode option | Detailed sequential plan or package. | New work preserves the current branch; revisions inherit the saved profile. |
+| `--light` | One compact task, no task-count question. | Material questions and correctness/verification requirements remain. |
+
+### Lightweight tasks
+
+```text
+$implementation-plan create "Correct the empty-state message on the requests page" --light
+```
+
+To select saved output without another output question:
+
+```text
+$implementation-plan create "Correct the empty-state message on the requests page" --light
+Prepare the package.
+```
+
+The skill reads current source and relevant tests, settles material uncertainties and plans one coherent task. A saved package contains `.package.json`, `PLAN.md`, `ORIGINAL_PLAN.md` and the original PDF only when supplied. `PLAN.md` combines scope, evidence, contracts, acceptance, checks, detailed commit drafts, progress, blockers, handoff and the P01 execution prompt. No separate tracking files or `prompts/` directory are required. `status` reads this plan; `prompt <package> P01` retrieves its execution section. Nothing executes until separately requested. Resume the identified unfinished revision and update its plan's tracking sections.
+
+Light supports selected skills, test/commit policies and a positive maximum; that maximum is a cap and does not add tasks. Work too broad for one implementation-and-proof unit requires reduced scope or detailed mode before writes. Security, permissions, data preservation, migration safety and verification still apply.
+
+To expand a light package, explicitly request detailed mode in natural language. A new revision preserves the original and confirms the expanded task count:
+
+```text
+$implementation-plan revise "<package-path>" "Expand this into a detailed package covering the agreed additional requirements."
+```
+
+To reduce a detailed package to an agreed single task, select light:
+
+```text
+$implementation-plan revise "<package-path>" "Limit scope to the agreed empty-state correction." --light
+```
+
+See [light planning](references/light-planning.md) and the [detailed package contract](references/package-contract.md) for authoring and recovery rules.
 
 ## Optional one-time settings
 
@@ -101,15 +143,51 @@ $implementation-plan status
 $implementation-plan help
 ```
 
-`revise` and changing `skills` requests save a new revision, preserve earlier files and valid evidence, and report the new path. Omitted options inherit prior values. `skills` without changes, `prompt`, `check`, `status`, and `help` are read-only. Unknown phase IDs and invalid option combinations are errors. Adding and removing the same skill in one request is invalid. `status` without a path lists recognized packages in the current project; it does not select one for editing.
+`revise` and changing `skills` requests save a new revision, preserve earlier files and valid evidence, and report the new path. Omitted options inherit prior values, including profile. `skills` changes only skill selection/assignment mode. `skills` without changes, `prompt`, `check`, `status`, and `help` are read-only. Unknown phase IDs, conflicting options, invalid enum values, missing/path-like inputs and cross-project revisions are errors. Adding and removing the same skill in one request is invalid. `status` without a path lists recognized packages in the current project; it does not select one for editing.
 
-`--max-phases N` proposes the Custom maximum hard cap. The skill confirms it and the resulting exact phase count before acting. The package store records both values and rejects a count above the cap. `--skills name1,name2` selects skills for later phase prompts. With no config, `--skills-mode auto` is the default: it reads selected skill instructions and assigns them to relevant phases. `--skills-mode all` places all selected skills in every prompt; conflicts and missing skills are reported rather than silently resolved. The planning skill does not install or invoke selected skills. With no config, `--commits off` is the default: later phase prompts may draft messages but do not authorize commits. `--commits scoped` permits owned local commits when a later phase is separately invoked and its required checks pass, subject to repository rules. `--auto-commit` records `auto` in the package so a later invoked phase prompt requires a local commit of only verified, owned changes after its checks pass. That commit must have a Conventional Commit subject, a blank line and a substantive body explaining what changed, why, and which checks actually ran; subject-only messages fail this requirement. The later agent inspects the Git diff, stages only owned paths, and verifies the committed message, changed paths and remaining status. Failed checks, missing prerequisites or no owned changes mean no commit; the agent reports the reason. Planning, package creation and revision never commit, including with `--auto-commit`. To turn auto-commit off in a package revision, use `--commits off`. Do not combine `--auto-commit` with `--commits`, even `scoped`; an option matching the config is allowed but redundant. No policy authorizes a push, deployment or another phase.
+`--max-phases N` proposes the Custom maximum hard cap in detailed mode; light mode keeps one task within the supplied cap. Detailed mode confirms the cap and resulting exact count before acting. The package store records both values and rejects a count above the cap. `--skills name1,name2` selects skills for later phase prompts. With no config, `--skills-mode auto` is the default: it reads selected skill instructions and assigns them to relevant phases. `--skills-mode all` places all selected skills in every prompt; conflicts and missing skills are reported rather than silently resolved. The planning skill does not install or invoke selected skills. With no config, `--commits off` is the default: later phase prompts may draft messages but do not authorize commits. `--commits scoped` permits owned local commits when a later phase is separately invoked and its required checks pass, subject to repository rules. `--auto-commit` records `auto` in the package so a later invoked phase prompt requires a local commit of only verified, owned changes after its checks pass. That commit must have a Conventional Commit subject, a blank line and a substantive body explaining what changed, why, and which checks actually ran; subject-only messages fail this requirement. The later agent inspects the Git diff, stages only owned paths, and verifies the committed message, changed paths and remaining status. Failed checks, missing prerequisites or no owned changes mean no commit; the agent reports the reason. Planning, package creation and revision never commit, including with `--auto-commit`. To turn auto-commit off in a package revision, use `--commits off`. Do not combine `--auto-commit` with `--commits`, even `scoped`; an option matching the config is allowed but redundant. No policy authorizes a push, deployment or another phase.
 
 With no config, `--test-scope focused` is the default for later implementation prompts: they require relevant tests for changed behavior and affected integrations. `--test-scope full` also requires the complete configured suite for each component changed in the selected phase. If you specifically need the entire backend suite, say so in the request; the package records that named suite in its runbook and prompts. The planning skill identifies actual project commands when available and records missing prerequisites. It does not run application tests. A full suite is never reported as passed when it was skipped or interrupted.
 
 Package choices save under `<project-root>/.implementation-plans/YYYYMMDDTHHMMSSZ-<feature>/<UTC-run-id>/`. The UTC timestamp makes new feature folders sort by creation time in a file browser; for example, `20261120T063718Z-queue-and-operations/`. Each revision has a unique run directory and stays in its feature folder. The skill adds `/.implementation-plans/` to the root `.gitignore` when needed and verifies exclusion before saving. It leaves existing `docs/` content and older feature folders untouched; revisions of earlier packages link back to their original path without moving it. Tracked output is refused without automatic untracking. In a non-Git project exclusion is unverified. Resume an identified draft revision after interruption; never overwrite or discard an earlier one. A failed storage check stops saving and reports the exact reason.
 
-`check` confirms the package structure and rejects subject-only commit lists or commit blocks without bodies. The author must still review whether each body covers its repository and logical feature in useful detail, along with requirement coverage, dependencies, links, prompt scope and evidence claims. A passing check does not prove implementation, native agent adherence or runtime behavior. After package preparation, request one specific phase in a separate turn using its exact path and ID, such as `Implement P01 from <package-path>`, or invoke the exact stored prompt returned by `prompt <package> P01`. Both routes stop at that phase; `$implementation-plan` itself remains planning-only.
+`check` confirms profile-specific files and dependency graph consistency. It rejects subject-only commit lists or commit blocks without bodies in COMMIT_MESSAGES.md or the light plan. The author must still review whether each body covers its repository and logical feature in useful detail, along with requirement coverage, dependencies, links, prompt scope and evidence claims. A passing check does not prove implementation, native agent adherence or runtime behavior. After package preparation, request one specific phase in a separate turn using its exact path and ID, such as `Implement P01 from <package-path>`, or invoke the exact stored prompt returned by `prompt <package> P01`. Both routes stop at that phase; `$implementation-plan` itself remains planning-only.
+
+## Bundled helper commands
+
+The agent normally runs `scripts/package_store.py` from the installed skill. These are terminal helper commands, not additional chat flags. They require Python 3.11+ and Git on PATH; the helper uses Git to establish roots even when the selected directory is not a repository. No external Python package is required. It reserves storage and checks authored content; it does not generate finished plans or execute worker/merge prompts.
+
+PowerShell, starting in any folder: replace `<installed-skill-dir>`, `<project-path>`, `<feature-name>` and `<package-path>` with actual paths/name. This changing command reserves a light draft and may append the root ignore rule; it does not write its PLAN.md:
+
+```powershell
+python -B '<installed-skill-dir>/scripts/package_store.py' start --project '<project-path>' --feature '<feature-name>' --profile light --phase-count 1
+```
+
+Additional `start` arguments are `--max-phases N`, `--skills name1,name2`, `--skills-mode auto|all`, `--commits off|scoped|auto`, `--test-scope focused|full`, `--previous <exact-package-path>`, `--source-plan <Markdown-path>` or `--source-document <PDF-path>` (mutually exclusive), `--profile detailed|light`. Chat `--light` maps to helper `--profile light`; chat `--auto-commit` maps to helper `--commits auto`. Do not transfer these flags between interfaces. New reservations default to detailed/off and the existing user-config policies; revisions inherit unspecified policies, selection, sizing and profile. Explicit overrides apply to the new revision. Light needs one task; nonpositive counts, exceeded caps, invalid policies/names and unsafe storage fail. No helper dry-run or merge executor exists.
+
+Read-only examples, same shell and folder rules:
+
+```powershell
+python -B '<installed-skill-dir>/scripts/package_store.py' list --project '<project-path>'
+```
+
+```powershell
+python -B '<installed-skill-dir>/scripts/package_store.py' check --package '<package-path>'
+```
+
+```powershell
+python -B '<installed-skill-dir>/scripts/package_store.py' status --package '<package-path>'
+```
+
+```powershell
+python -B '<installed-skill-dir>/scripts/package_store.py' skills --package '<package-path>'
+```
+
+```powershell
+python -B '<installed-skill-dir>/scripts/package_store.py' prompt --package '<package-path>' --phase P01
+```
+
+The historical helper argument `--phase` accepts a Pxx ID. Prompt retrieval requires a ready package with no validation errors; unknown IDs fail. `check` returns nonzero for structural errors, including missing documents, dependency cycles. `status` includes the saved ledger and consistency errors without treating them as implementation proof. Fix an identified unfinished draft, recheck, and mark ready only after semantic review. Use a new revision for changes to an established plan. These read-only commands do not change package files, Git state or user config.
 
 ## Install
 

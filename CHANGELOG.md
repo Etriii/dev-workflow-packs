@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Add implementation-plan light packages with one task and combined specification, execution prompt and tracking; preserve source snapshots, saved policies and older package schemas.
 - Require implementation-plan feature-specific detail across model/effort settings, exact handoff reading sets, and source-bound verification evidence.
 - Make implementation-plan phase prompts and handoffs point to their package commit drafts for later explicit commit-only requests, with diff-backed message review.
 - Clarify report-builder placement in existing navigation and feature pages, screen-preview parity and limits, and BALE's optional source examples.

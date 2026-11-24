@@ -55,6 +55,8 @@ class PackageStoreTests(unittest.TestCase):
         (package / "prompts" / "P01_BUILD.md").write_text("Implement P01 only.\n", encoding="utf-8")
         metadata = json.loads((package / ".package.json").read_text(encoding="utf-8"))
         metadata["phases"] = {"P01": "P01_BUILD.md"}
+        if metadata["schema_version"] >= 3:
+            metadata["dependencies"] = {"P01": []}
         metadata["skill_assignments"] = {
             name: {"phases": ["P01"], "reason": "Relevant to the selected phase"}
             for name in metadata["skills"]
@@ -330,6 +332,7 @@ class PackageStoreTests(unittest.TestCase):
         (package / "prompts" / "P02_VERIFY.md").write_text("Verify P02 only.\n", encoding="utf-8")
         data = json.loads((package / ".package.json").read_text(encoding="utf-8"))
         data["phases"]["P02"] = "P02_VERIFY.md"
+        data["dependencies"]["P02"] = ["P01"]
         (package / ".package.json").write_text(json.dumps(data), encoding="utf-8")
         self.assertEqual(store.inspect(package)["errors"], [])
         with self.assertRaisesRegex(ValueError, "within --max-phases"):
@@ -422,6 +425,8 @@ class PackageStoreTests(unittest.TestCase):
         for agent_dir in (".agents", ".claude"):
             installed = self.root / agent_dir / "skills/implementation-plan/assets/config.json"
             self.assertEqual(installed.read_bytes(), source.read_bytes())
+            for relative in ("references/light-planning.md", "scripts/package_store.py"):
+                self.assertEqual((installed.parent.parent / relative).read_bytes(), (SCRIPT.parent.parent / relative).read_bytes())
 
     def test_cli_accepts_auto_commit_policy(self):
         self.init_git()
@@ -455,6 +460,84 @@ class PackageStoreTests(unittest.TestCase):
         data["skill_assignments"] = {}
         (package / ".package.json").write_text(json.dumps(data))
         self.assertIn("Skill assignments do not match selected skills", store.inspect(package)["errors"])
+
+    def save_light(self, package):
+        messages = (
+            "# Narrow change\n\nScope and acceptance: preserve request history.\n\n"
+            "## Commit draft\n\n```text\nfix(requests): preserve history\n\n"
+            "Retain existing decisions when updating request details. Checks NOT_RUN.\n```\n\n"
+            "## P01\n\nRead this plan, implement only the request-history correction, "
+            "run the affected request tests, record results here and stop.\n"
+        )
+        (package / "PLAN.md").write_text(messages, encoding="utf-8")
+        if not (package / store.ORIGINAL_PLAN).exists():
+            (package / store.ORIGINAL_PLAN).write_text("# Preserve request history\n", encoding="utf-8")
+        metadata = json.loads((package / ".package.json").read_text())
+        metadata.update(phases={"P01": "PLAN.md#P01"}, dependencies={"P01": []}, status="ready")
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+
+
+
+    def test_light_package_has_one_document_for_plan_execution_and_tracking(self):
+        self.init_git()
+        package = Path(store.start(self.root, "Narrow change", profile="light")["package"])
+        self.save_light(package)
+        self.assertFalse((package / "prompts").exists())
+        self.assertEqual(store.inspect(package)["errors"], [])
+        before = {p.relative_to(package): p.read_bytes() for p in package.rglob("*") if p.is_file()}
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(store.main(["prompt", "--package", str(package), "--phase", "P01"]), 0)
+            self.assertEqual(store.main(["status", "--package", str(package)]), 0)
+        self.assertIn("request-history correction", output.getvalue())
+        self.assertEqual(before, {p.relative_to(package): p.read_bytes() for p in package.rglob("*") if p.is_file()})
+
+    def test_light_revision_inherits_and_can_expand_without_mutating_original(self):
+        first = Path(store.start(self.root, "Narrow change", profile="light", skills="migration")["package"])
+        self.save_light(first)
+        inherited = Path(store.start(self.root, "Ignored", previous=first)["package"])
+        data = json.loads((inherited / ".package.json").read_text())
+        self.assertEqual((data["profile"], data["skills"], data["phase_count"]), ("light", ["migration"], 1))
+        expanded = Path(store.start(self.root, "Ignored", previous=first, profile="detailed", phase_count=2)["package"])
+        self.assertEqual(json.loads((expanded / ".package.json").read_text())["profile"], "detailed")
+        self.assertEqual(json.loads((first / ".package.json").read_text())["profile"], "light")
+
+    def test_invalid_modes_stop_before_output_or_ignore_writes(self):
+        for options in ({"profile": "light", "phase_count": 2}, {"profile": "unknown"}, {"max_phases": 0}):
+            with self.subTest(options=options), self.assertRaises(ValueError):
+                store.start(self.root, "Invalid", **options)
+            self.assertFalse((self.root / store.OUTPUT).exists())
+            self.assertFalse((self.root / ".gitignore").exists())
+
+    def test_older_detailed_schemas_remain_readable_without_rewrite(self):
+        package = Path(store.start(self.root, "Legacy")["package"])
+        self.save_complete(package)
+        metadata = json.loads((package / ".package.json").read_text())
+        for schema in (1, 2):
+            metadata["schema_version"] = schema
+            for name in ("profile", "dependencies"):
+                metadata.pop(name, None)
+            (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+            before = (package / ".package.json").read_bytes()
+            self.assertEqual(store.inspect(package)["errors"], [])
+            self.assertEqual((package / ".package.json").read_bytes(), before)
+
+
+
+
+
+
+
+
+
+
+
+    def test_cli_selects_light_profile(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(store.main(["start", "--project", str(self.root), "--feature", "Task", "--profile", "light"]), 0)
+        data = json.loads((Path(json.loads(output.getvalue())["package"]) / ".package.json").read_text())
+        self.assertEqual(data["profile"], "light")
 
     def test_read_only_commands_do_not_change_package_and_prompt_requires_ready(self):
         self.init_git()
