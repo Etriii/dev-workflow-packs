@@ -876,6 +876,69 @@ class PackageStoreTests(unittest.TestCase):
         self.assertIn("Still current", store.markdown_section(body, "Current"))
         self.assertNotIn("old logs", store.markdown_section(body, "Current"))
 
+    def decision_record(self, fence="```", decision="P01-D01"):
+        return (
+            f"## {decision}\n\nQuestion: How should compact filters be displayed?\n"
+            "Options: A inline (recommended); B expanded.\nAnswer: A preserves the existing small picker.\n"
+            "Status: APPLIED\nBefore: expanded filters in picker.php at the recorded baseline.\n"
+            "Verification: affected picker tests passed; deployed behavior unverified.\n\n"
+            f"### Change\n\n{fence}text\nChange decision {decision} from the exact package DECISIONS.md "
+            "to B, expanded filters. Inspect current source/dependencies, change only the owned picker, "
+            "run affected checks, update the record and follow saved commit policy.\n"
+            f"{fence}\n\n### Undo\n\n{fence}text\nUndo decision {decision} from the exact package DECISIONS.md. "
+            "Restore the recorded expanded behavior using a focused reverse change, preserve later unrelated work, "
+            f"verify restoration and record its outcome.\n{fence}\n")
+
+    def test_decisions_require_two_usable_addressed_recovery_prompts(self):
+        package = Path(store.start(self.root, "Picker decision")["package"])
+        self.save_balanced(package)
+        path = package / "DECISIONS.md"
+        for fence in ("```", "~~~"):
+            path.write_text("# Decisions\n\n" + self.decision_record(fence), encoding="utf-8")
+            self.assertEqual(store.inspect(package)["errors"], [])
+        path.write_text(self.decision_record().split("### Undo")[0], encoding="utf-8")
+        errors = store.inspect(package)["errors"]
+        self.assertIn("Decision P01-D01 needs exactly two fenced text recovery prompts", errors)
+        self.assertIn("Decision P01-D01 needs one addressed Undo prompt", errors)
+        with redirect_stderr(io.StringIO()):
+            self.assertEqual(store.main(["prompt", "--package", str(package), "--phase", "P01"]), 1)
+
+    def test_worker_decisions_are_checked_without_rewriting_the_canonical_log(self):
+        package = Path(store.start(self.root, "Picker decision")["package"])
+        self.save_balanced(package)
+        canonical = (package / "DECISIONS.md").read_bytes()
+        worker = package / "phase-01/outputs/DECISIONS.md"
+        worker.parent.mkdir()
+        worker.write_text(self.decision_record(), encoding="utf-8")
+        self.assertEqual(store.inspect(package)["errors"], [])
+        self.assertEqual((package / "DECISIONS.md").read_bytes(), canonical)
+        worker.write_text(self.decision_record().replace("Status: APPLIED", "Status: UNKNOWN"), encoding="utf-8")
+        self.assertTrue(any("Status" in e for e in store.inspect(package)["errors"]))
+        worker.write_text(self.decision_record(decision="P99-D01"), encoding="utf-8")
+        self.assertTrue(any("no owning task" in e for e in store.inspect(package)["errors"]))
+
+    def test_decision_examples_do_not_create_orphan_records_and_duplicates_fail(self):
+        package = Path(store.start(self.root, "Picker decision")["package"])
+        self.save_balanced(package)
+        body = self.decision_record()
+        path = package / "DECISIONS.md"
+        path.write_text(body.replace("Change decision", "## P99-D01\nChange decision"), encoding="utf-8")
+        self.assertEqual(store.inspect(package)["errors"], [])
+        path.write_text(body + "\n" + body, encoding="utf-8")
+        self.assertTrue(any("Duplicate prompt section" in e for e in store.inspect(package)["errors"]))
+        path.write_text(body.replace("Undo decision P01-D01", "Undo decision P02-D01"), encoding="utf-8")
+        self.assertIn("Decision P01-D01 needs one addressed Undo prompt", store.inspect(package)["errors"])
+
+    def test_read_only_balanced_task_does_not_require_an_invented_commit(self):
+        package = Path(store.start(self.root, "Final acceptance")["package"])
+        self.save_balanced(package)
+        prompt = package / "phase-01/PROMPT.md"
+        prompt.write_text("# P01 final acceptance\n\nVerify the existing report without product edits.\n\n"
+                          "NO_COMMIT_EXPECTED: this task only records acceptance evidence.\n", encoding="utf-8")
+        self.assertEqual(store.inspect(package)["errors"], [])
+        prompt.write_text(prompt.read_text() + "\n```text\nfeat: invent a commit\n```\n", encoding="utf-8")
+        self.assertTrue(any("needs a body" in e for e in store.inspect(package)["errors"]))
+
 
 if __name__ == "__main__":
     unittest.main()

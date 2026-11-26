@@ -3,6 +3,7 @@
 ## Unreleased collection 0.1.0
 
 - Make implementation-plan default to compact Balanced packages with phase-owned prompts, bounded status output and compatible profile revisions; retain explicit Detailed and Light layouts.
+- Validate Balanced decision records and their two addressed Change/Undo prompts, including isolated worker logs, while keeping semantic implementation and recovery claims bound to actual source and checks.
 - Add implementation-plan light packages, mandatory detailed-plan coverage, parallel dependency/ownership checks, worktree preparation and individually retrievable merge prompts in one Markdown file; preserve older package schemas and planning-only Git boundaries.
 - Make implementation-plan phase prompts and handoffs point to their package commit drafts for later explicit commit-only requests, with diff-backed message review.
 - Clarify report-builder placement in existing navigation and feature pages, screen-preview parity and limits, and BALE's optional source examples.

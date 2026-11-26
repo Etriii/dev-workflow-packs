@@ -50,6 +50,8 @@ class CatalogTests(unittest.TestCase):
                 expected_files = {"SKILL.md", "README.md", "metadata.toml"}
                 if name == "deep-critique":
                     expected_files |= {"scripts/report_store.py", "scripts/storage_io.py", "references/report-storage.md"}
+                elif name == "plan-review":
+                    expected_files |= {"references/report-format.md"}
                 elif name == "report-builder":
                     expected_files |= {
                         "references/discovery-and-metrics.md", "references/documents.md",

@@ -33,6 +33,8 @@ MERGE_FILE = "prompts/MERGE_PROMPTS.md"
 RUN_ID = re.compile(r"\d{8}T\d{6}Z-[0-9a-f]{12}")
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 COMMIT_BLOCK = re.compile(r"^```(?:text|commit)?[ \t]*\r?\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOTALL)
+RECOVERY_BLOCK = re.compile(r"^(?P<fence>`{3,}|~{3,})text[ \t]*\r?\n(?P<body>.*?)^(?P=fence)[ \t]*$",
+                            re.MULTILINE | re.DOTALL)
 COMMIT_SUBJECT = re.compile(r"^(?:feat|fix|refactor|chore|docs|test|perf|ci)(?:\([^)\r\n]+\))?!?: [^\r\n]+$")
 BUILTIN_SETTINGS = {"commits": "off", "test_scope": "focused", "skills_mode": "auto"}
 SETTING_VALUES = {"commits": ("off", "scoped", "auto"),
@@ -368,7 +370,7 @@ def start(project, feature, max_phases=None, skills=None, skills_mode=None, comm
     return {"package": str(package), "git_exclusion_verified": is_git, "ignore_rule": rule}
 
 
-def prompt_sections(path):
+def prompt_sections(path, identifiers=r"[PM]\d{2,}"):
     """Extract addressable level-two sections without interpreting fenced examples."""
     sections = {}
     current = None
@@ -382,7 +384,7 @@ def prompt_sections(path):
             elif token[0] == fence[0] and len(token) >= len(fence):
                 fence = None
         if fence is None and not marker and line.startswith("## "):
-            match = re.fullmatch(r"## ([PM]\d{2,})\s*", line.strip())
+            match = re.fullmatch(r"## (" + identifiers + r")\s*", line.strip())
             current = match[1] if match else None
             if current:
                 if current in sections:
@@ -448,7 +450,7 @@ def phase_file(package, data, name):
     return regular(package / name if phased(data) else package / "prompts" / name)
 
 
-def markdown_section(body, title):
+def markdown_section(body, title, level=2):
     """Read one current summary without returning the execution archive."""
     selected, fence, lines = False, None, []
     for line in body.splitlines(keepends=True):
@@ -459,10 +461,11 @@ def markdown_section(body, title):
                 fence = token
             elif token[0] == fence[0] and len(token) >= len(fence):
                 fence = None
-        if fence is None and not marker and line.startswith("## "):
+        prefix = "#" * level + " "
+        if fence is None and not marker and line.startswith(prefix):
             if selected:
                 break
-            selected = line.strip() == "## " + title
+            selected = line.strip() == prefix + title
             continue
         if selected:
             lines.append(line)
@@ -528,18 +531,47 @@ def inspect_phased(package, data, phases, files, errors):
             continue
         if name not in index_body:
             errors.append(f"PROMPTS.md must link the stored task prompt: {task}")
-        decision = regular((package / name).parent / "DECISIONS.md")
+        decision = regular((package / name).parent / "outputs" / "DECISIONS.md")
         if decision.is_file():
             files.append(decision)
+            inspect_decisions(decision, phases, errors)
+    decision = regular(package / "DECISIONS.md")
+    if decision.is_file():
+        inspect_decisions(decision, phases, errors)
 
 
-def inspect_commit_drafts(path, errors):
+def inspect_decisions(path, phases, errors):
+    """Require usable, individually addressed change and undo requests."""
+    try:
+        records = prompt_sections(path, r"P\d{2,}-D\d{2,}")
+    except ValueError as error:
+        errors.append(str(error))
+        return
+    for key, body in records.items():
+        if key.split("-", 1)[0] not in phases:
+            errors.append(f"Decision {key} has no owning task: {path.name}")
+        state = re.search(r"^(?:[-*] )?Status:\s*(PROPOSED|APPLIED|CHANGED|REVERTED)\b", body, re.MULTILINE)
+        if not state:
+            errors.append(f"Decision {key} needs a proposed/applied/changed/reverted Status")
+        if len(list(RECOVERY_BLOCK.finditer(body))) != 2:
+            errors.append(f"Decision {key} needs exactly two fenced text recovery prompts")
+        for action in ("Change", "Undo"):
+            section = markdown_section(body, action, level=3)
+            blocks = [match.group("body").strip() for match in RECOVERY_BLOCK.finditer(section)]
+            if len(blocks) != 1 or not blocks[0] or key not in blocks[0]:
+                errors.append(f"Decision {key} needs one addressed {action} prompt")
+
+
+def inspect_commit_drafts(path, errors, allow_no_commit=False):
     if not path.is_file():
         return
+    text = path.read_text(encoding="utf-8")
     blocks = [block.replace("\r\n", "\n").strip()
-              for block in COMMIT_BLOCK.findall(path.read_text(encoding="utf-8"))]
+              for block in COMMIT_BLOCK.findall(text)]
     drafts = [block for block in blocks if block and COMMIT_SUBJECT.fullmatch(block.splitlines()[0])]
     if not drafts:
+        if allow_no_commit and re.search(r"^NO_COMMIT_EXPECTED:\s*\S.+$", text, re.MULTILINE):
+            return
         errors.append(f"{path.name} needs copyable Conventional Commit blocks with detailed bodies; subject-only lists are incomplete")
     for draft in drafts:
         subject, _, body = draft.partition("\n\n")
@@ -810,7 +842,7 @@ def inspect(package):
             elif phase not in prompt.read_text(encoding="utf-8"):
                 errors.append(f"Prompt does not identify {phase}: {name}")
             if phased(data):
-                inspect_commit_drafts(prompt, errors)
+                inspect_commit_drafts(prompt, errors, allow_no_commit=True)
     assignments = data.get("skill_assignments")
     names = data.get("skills")
     if not text_list(names, allow_empty=True) or not isinstance(assignments, dict) or set(assignments) != set(names):
