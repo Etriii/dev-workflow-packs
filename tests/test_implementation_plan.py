@@ -40,6 +40,8 @@ class PackageStoreTests(unittest.TestCase):
         self.git("init", "-q")
 
     def save_complete(self, package):
+        """Build a flat schema-3 fixture to keep legacy compatibility exercised."""
+        (package / "prompts").mkdir(exist_ok=True)
         for name in store.SHARED:
             (package / name).write_text(f"# {name}\n", encoding="utf-8")
         (package / "COMMIT_MESSAGES.md").write_text(
@@ -54,6 +56,7 @@ class PackageStoreTests(unittest.TestCase):
             (package / store.ORIGINAL_PLAN).write_text("# Session plan\n", encoding="utf-8")
         (package / "prompts" / "P01_BUILD.md").write_text("Implement P01 only.\n", encoding="utf-8")
         metadata = json.loads((package / ".package.json").read_text(encoding="utf-8"))
+        metadata.update(schema_version=3, profile="detailed", parallel_mode="off")
         metadata["phases"] = {"P01": "P01_BUILD.md"}
         if metadata["schema_version"] >= 3:
             metadata["dependencies"] = {"P01": []}
@@ -146,7 +149,7 @@ class PackageStoreTests(unittest.TestCase):
         package = Path(json.loads(output.getvalue())["package"])
         self.assertEqual((package / store.ORIGINAL_PLAN).read_bytes(), source.read_bytes())
         session = Path(store.start(self.root, "Scheduling")["package"])
-        self.assertIn("Missing ORIGINAL_PLAN.md", store.inspect(session)["errors"])
+        self.assertNotIn("Missing ORIGINAL_PLAN.md", store.inspect(session)["errors"])
 
     def test_invalid_source_plan_does_not_create_output(self):
         self.init_git()
@@ -164,7 +167,7 @@ class PackageStoreTests(unittest.TestCase):
         source.write_bytes(original)
         package = Path(store.start(self.root, "System Fixes", source_document=source)["package"])
         self.assertEqual((package / store.SOURCE_DOCUMENT).read_bytes(), original)
-        self.assertIn("Missing ORIGINAL_PLAN.md", store.inspect(package)["errors"])
+        self.assertNotIn("Missing ORIGINAL_PLAN.md", store.inspect(package)["errors"])
         self.save_complete(package)
         self.assertEqual(store.inspect(package)["errors"], [])
         revised = Path(store.start(self.root, "Ignored title", previous=package)["package"])
@@ -425,7 +428,7 @@ class PackageStoreTests(unittest.TestCase):
         for agent_dir in (".agents", ".claude"):
             installed = self.root / agent_dir / "skills/implementation-plan/assets/config.json"
             self.assertEqual(installed.read_bytes(), source.read_bytes())
-            for relative in ("references/light-planning.md", "references/parallel-planning.md", "scripts/package_store.py"):
+            for relative in ("references/balanced-planning.md", "references/execution.md", "references/light-planning.md", "references/parallel-planning.md", "scripts/package_store.py"):
                 self.assertEqual((installed.parent.parent / relative).read_bytes(), (SCRIPT.parent.parent / relative).read_bytes())
 
     def test_cli_accepts_auto_commit_policy(self):
@@ -481,6 +484,7 @@ class PackageStoreTests(unittest.TestCase):
         metadata = json.loads((package / ".package.json").read_text())
         metadata.update(
             status="ready", phases={"P01": "P01_BUILD.md", "P02": "P02_BUILD.md", "P03": "P03_VERIFY.md"},
+            parallel_mode="worktree" if worktrees else "analysis",
             dependencies={"P01": [], "P02": [], "P03": ["P01", "P02"]},
             parallel_groups={"G01": ["P01", "P02"]},
             parallel_reason="Independent request and reporting owners; integration waits for both.",
@@ -699,7 +703,7 @@ class PackageStoreTests(unittest.TestCase):
 
     def test_cli_selects_light_and_parallel_profiles(self):
         for arguments, expected in ((["--profile", "light"], ("light", "off")),
-                                    (["--parallel-ready"], ("detailed", "analysis"))):
+                                    (["--parallel-ready"], ("balanced", "analysis"))):
             output = io.StringIO()
             with redirect_stdout(output):
                 self.assertEqual(store.main(["start", "--project", str(self.root), "--feature", "Task"] + arguments), 0)
@@ -728,6 +732,149 @@ class PackageStoreTests(unittest.TestCase):
         self.assertIn(package.name, output.getvalue())
         after = {path.relative_to(package): path.read_bytes() for path in package.rglob("*") if path.is_file()}
         self.assertEqual(after, before)
+
+    def save_balanced(self, package, count=1):
+        metadata = json.loads((package / ".package.json").read_text(encoding="utf-8"))
+        metadata.update(status="ready", phase_count=count,
+                        phases={f"P{i:02d}": f"phase-{i:02d}/PROMPT.md" for i in range(1, count + 1)},
+                        dependencies={f"P{i:02d}": [] if i == 1 else [f"P{i-1:02d}"]
+                                      for i in range(1, count + 1)},
+                        parallel_reason="One shared service requires sequential implementation; no safe split.")
+        (package / "PLAN.md").write_text("# Scope\n\nKeep saved report data private.\n", encoding="utf-8")
+        (package / "STATUS.md").write_text(
+            "# Status\n\n## Current\n\n| Task | State | Evidence |\n|---|---|---|\n" +
+            "".join(f"| P{i:02d} | NOT_STARTED | NOT_RUN |\n" for i in range(1, count + 1)) +
+            "\nNext: implement the first ready task.\n\n## History\n\nARCHIVED_DETAIL\n", encoding="utf-8")
+        (package / "DECISIONS.md").write_text("# Decisions\n\nNo execution decisions yet.\n", encoding="utf-8")
+        (package / "PROMPTS.md").write_text(
+            "# Task index\n\n" + "".join(f"[{task}]({name}): separate session; prerequisites apply; sequential.\n"
+                                          for task, name in metadata["phases"].items()), encoding="utf-8")
+        for task, name in metadata["phases"].items():
+            prompt = package / name
+            prompt.parent.mkdir(exist_ok=True)
+            prompt.write_text(
+                f"# {task} request history\n\nImplement {task} only; keep permissions intact.\n\n"
+                "```text\nfeat: preserve request history\n\n"
+                "Retain owner-scoped requests before download so users can find pending output.\n\n"
+                "Verification: NOT_RUN; run the affected request tests.\n```\n", encoding="utf-8")
+        metadata["skill_assignments"] = {
+            name: {"phases": list(metadata["phases"]), "reason": "Own the selected task"}
+            for name in metadata["skills"]}
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        return metadata
+
+    def test_balanced_default_is_compact_and_does_not_create_output_placeholders(self):
+        self.init_git()
+        package = Path(store.start(self.root, "Report history", phase_count=1)["package"])
+        data = json.loads((package / ".package.json").read_text())
+        self.assertEqual((data["schema_version"], data["profile"], data["parallel_mode"], data["commits"]),
+                         (4, "balanced", "worktree", "off"))
+        self.assertEqual({p.name for p in package.iterdir()}, {".package.json"})
+        self.save_balanced(package)
+        self.assertEqual(store.inspect(package)["errors"], [])
+        self.assertEqual(len([p for p in package.rglob("*") if p.is_file()]), 6)
+        self.assertFalse((package / "phase-01/outputs").exists())
+        self.assertIn("Implement P01 only", store.stored_prompt(package, data | {"phases": {"P01": "phase-01/PROMPT.md"}}, "P01"))
+
+    def test_detailed_retains_existing_contract_and_non_git_balanced_uses_analysis(self):
+        package = Path(store.start(self.root, "Report history")["package"])
+        self.assertEqual(json.loads((package / ".package.json").read_text())["parallel_mode"], "analysis")
+        detailed = Path(store.start(self.root, "Full plan", profile="detailed")["package"])
+        self.assertEqual(json.loads((detailed / ".package.json").read_text())["schema_version"], 3)
+        self.assertTrue((detailed / "prompts").is_dir())
+        self.assertIn("Missing CONTRACTS.md", store.inspect(detailed)["errors"])
+
+    def test_balanced_status_is_bounded_and_dependency_readiness_is_recorded_only(self):
+        package = Path(store.start(self.root, "Report history")["package"])
+        metadata = self.save_balanced(package, 2)
+        output = io.StringIO()
+        before = {p.relative_to(package): p.read_bytes() for p in package.rglob("*") if p.is_file()}
+        with redirect_stdout(output):
+            self.assertEqual(store.main(["status", "--package", str(package)]), 0)
+        result = json.loads(output.getvalue())
+        self.assertNotIn("ARCHIVED_DETAIL", output.getvalue())
+        self.assertTrue(result["tasks"]["P01"]["can_start_separately"])
+        self.assertEqual(result["tasks"]["P02"]["waiting_for"], ["P01"])
+        self.assertTrue(result["recorded_only"])
+        status = package / "STATUS.md"
+        status.write_text(status.read_text().replace("P01 | NOT_STARTED", "P01 | COMPLETE"), encoding="utf-8")
+        self.assertTrue(store.status_summary(package, metadata)["tasks"]["P02"]["can_start_separately"])
+        status.write_bytes(before[Path("STATUS.md")])
+        self.assertEqual(before, {p.relative_to(package): p.read_bytes() for p in package.rglob("*") if p.is_file()})
+        self.assertIn("ARCHIVED_DETAIL", store.status_summary(package, metadata, history=True)["history"])
+
+    def test_balanced_bad_paths_and_stale_current_state_are_rejected(self):
+        package = Path(store.start(self.root, "Report history")["package"])
+        metadata = self.save_balanced(package)
+        for name in ("../outside.md", "phase-02/PROMPT.md", "phases/P01-test/PROMPT.md", "phase-01/other.md"):
+            changed = metadata | {"phases": {"P01": name}}
+            (package / ".package.json").write_text(json.dumps(changed), encoding="utf-8")
+            self.assertIn("Invalid phase prompt mapping: P01", store.inspect(package)["errors"])
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        path = package / "STATUS.md"
+        body = path.read_text()
+        path.write_text(body.replace("NOT_STARTED", "COMPLETE") + "\n", encoding="utf-8")
+        self.assertEqual(store.inspect(package)["errors"], [])
+        path.write_text(body.replace("| P01 | NOT_STARTED | NOT_RUN |", "| P01 | INVALID | |"), encoding="utf-8")
+        self.assertTrue(any("valid state" in e for e in store.inspect(package)["errors"]))
+        path.write_text(body.replace("## History", "| P01 | COMPLETE | |\n\n## History"), encoding="utf-8")
+        self.assertIn("STATUS.md has duplicate current task states", store.inspect(package)["errors"])
+
+    def test_balanced_revision_inherits_policies_without_rewriting_legacy(self):
+        package = Path(store.start(self.root, "Report history", commits="auto", phase_count=1)["package"])
+        self.save_balanced(package)
+        before = {p.relative_to(package): p.read_bytes() for p in package.rglob("*") if p.is_file()}
+        revised = Path(store.start(self.root, "Ignored", previous=package)["package"])
+        metadata = json.loads((revised / ".package.json").read_text())
+        self.assertEqual((metadata["profile"], metadata["parallel_mode"], metadata["commits"]),
+                         ("balanced", "analysis", "auto"))
+        self.assertEqual(before, {p.relative_to(package): p.read_bytes() for p in package.rglob("*") if p.is_file()})
+
+    def test_balanced_file_snapshot_is_required_but_chat_plan_is_not_duplicated(self):
+        source = self.root / "requirements.md"
+        source.write_bytes(b"# Requirements\r\nKeep report ownership.\r\n")
+        package = Path(store.start(self.root, "Report history", source_plan=source)["package"])
+        self.save_balanced(package)
+        self.assertEqual(store.inspect(package)["errors"], [])
+        (package / store.ORIGINAL_PLAN).unlink()
+        self.assertIn("Missing ORIGINAL_PLAN.md", store.inspect(package)["errors"])
+        with self.assertRaisesRegex(ValueError, "Previous original plan is missing"):
+            store.start(self.root, "Ignored", previous=package)
+
+    def test_balanced_parallel_workers_wait_for_merged_prerequisites_and_retrieve_one_merge(self):
+        self.initialize_commit()
+        package = Path(store.start(self.root, "Report outputs", commits="auto")["package"])
+        metadata = self.save_balanced(package, 3)
+        base = self.git("rev-parse", "HEAD")
+        metadata.update(dependencies={"P01": [], "P02": [], "P03": ["P01", "P02"]},
+                        parallel_groups={"G01": ["P01", "P02"]},
+                        parallel_reason="Independent PDF and workbook owners with isolated test stores.")
+        metadata["parallel_tasks"] = {
+            task: {"owned_paths": [f"src/{task}.py"], "write_resources": [f"db:{task}"],
+                   "read_set": ["PLAN.md", metadata["phases"][task]], "reason": "Separate renderer owner",
+                   "repository": str(self.root), "branch": f"task/{task}", "base_commit": base,
+                   "worktree": str(self.root.parent / f"{self.root.name}-{task}")}
+            for task in ("P01", "P02")}
+        metadata["merges"] = {
+            "M01": {"phases": ["P01", "P02"], "owner_phase": "P03", "repository": str(self.root),
+                    "target_branch": self.git("branch", "--show-current"), "target_commit": base, "depends_on": []}}
+        (package / "MERGE_PROMPTS.md").write_text("# Merge rules\n\n## M01\n\nMerge named sources, verify, preserve evidence and clean owned worktrees.\n", encoding="utf-8")
+        (package / ".package.json").write_text(json.dumps(metadata), encoding="utf-8")
+        before = self.git("worktree", "list", "--porcelain")
+        self.assertEqual(store.inspect(package)["errors"], [])
+        self.assertIn("clean owned worktrees", store.stored_prompt(package, metadata, "M01"))
+        status = package / "STATUS.md"
+        status.write_text(status.read_text().replace("P01 | NOT_STARTED", "P01 | COMPLETE")
+                          .replace("P02 | NOT_STARTED", "P02 | MERGED"), encoding="utf-8")
+        self.assertEqual(store.status_summary(package, metadata)["tasks"]["P03"]["waiting_for"], ["P01"])
+        status.write_text(status.read_text().replace("P01 | COMPLETE", "P01 | MERGED"), encoding="utf-8")
+        self.assertTrue(store.status_summary(package, metadata)["tasks"]["P03"]["can_start_separately"])
+        self.assertEqual(self.git("worktree", "list", "--porcelain"), before)
+
+    def test_status_summary_ignores_fenced_heading_examples(self):
+        body = "## Current\n\nNext step.\n```text\n## History\nexample\n```\nStill current.\n## History\nold logs\n"
+        self.assertIn("Still current", store.markdown_section(body, "Current"))
+        self.assertNotIn("old logs", store.markdown_section(body, "Current"))
 
 
 if __name__ == "__main__":

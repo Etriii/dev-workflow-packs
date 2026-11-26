@@ -1,6 +1,6 @@
 # Implementation package contract
 
-This is the detailed profile's contract; explicit light mode uses [its smaller contract](light-planning.md). The package records a plan, not completed work. Feature-specific detail is mandatory regardless of model, effort or terse style. Preserve these document owners without copied headings, invented details or test results. Package creation and checking end this skill's work; application changes require a later request naming the exact package and phase. Parallel options additionally use [parallel planning](parallel-planning.md), never automatic execution.
+This is the explicitly selected Detailed profile's existing flat contract; new work defaults to [Balanced](balanced-planning.md). Explicit light mode uses [its smaller contract](light-planning.md). The package records a plan, not completed work. Feature-specific detail is mandatory regardless of model, effort or terse style. Preserve these document owners without copied headings, invented details or test results. Package creation and checking end this skill's work; application changes require a later request naming the exact package and phase. Parallel options additionally use [parallel planning](parallel-planning.md), never automatic execution.
 
 | File | Owns |
 |---|---|

@@ -64,7 +64,7 @@ class CatalogTests(unittest.TestCase):
                 elif name == "system-settings":
                     expected_files |= {"references/discovery.md", "references/implementation.md"}
                 elif name == "implementation-plan":
-                    expected_files |= {"references/package-contract.md", "references/light-planning.md",
+                    expected_files |= {"references/package-contract.md", "references/balanced-planning.md", "references/execution.md", "references/light-planning.md",
                                        "references/parallel-planning.md", "scripts/package_store.py", "assets/config.json"}
                 elif name in {"ultimate-ui-ux", "ultimate-ui", "ultimate-ux", "ultimate-mobile"}:
                     expected_files |= {

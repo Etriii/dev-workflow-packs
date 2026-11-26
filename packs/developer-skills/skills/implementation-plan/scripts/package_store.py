@@ -23,6 +23,8 @@ SHARED = (
     "RUNBOOK.md", "ACCEPTANCE.md", "PROGRESS.md", "HANDOFF.md",
     "BLOCKERS.md", "COMMIT_MESSAGES.md",
 )
+PHASED_SHARED = ("PLAN.md", "STATUS.md", "PROMPTS.md", "DECISIONS.md")
+PROFILES = ("balanced", "detailed", "light")
 ORIGINAL_PLAN = "ORIGINAL_PLAN.md"
 SOURCE_DOCUMENT = "SOURCE_DOCUMENT.pdf"
 PHASE_ID = re.compile(r"P\d{2,}")
@@ -148,7 +150,7 @@ def locate(package):
     if marker != STORE_MARKER:
         raise ValueError("Unrecognized feature folder ownership")
     data = read_json(package / ".package.json")
-    if data.get("schema_version") not in (1, 2, 3) or data.get("owner") != OWNER:
+    if data.get("schema_version") not in (1, 2, 3, 4) or data.get("owner") != OWNER:
         raise ValueError("Unrecognized package metadata")
     root, is_git = project_root(package.parent.parent.parent)
     if package.parent.parent != safe(root / output_name):
@@ -266,10 +268,11 @@ def start(project, feature, max_phases=None, skills=None, skills_mode=None, comm
     if phase_count is None and prior:
         phase_count = prior.get("phase_count")
     if profile is None:
-        profile = prior.get("profile", "detailed") if prior else "detailed"
+        profile = prior.get("profile", "detailed") if prior else "balanced"
     if parallel_mode is None:
-        parallel_mode = prior.get("parallel_mode", "off") if prior else "off"
-    if profile not in ("detailed", "light") or parallel_mode not in ("off", "analysis", "worktree"):
+        parallel_mode = (prior.get("parallel_mode", "off") if prior else
+                         "off" if profile != "balanced" else "worktree" if is_git else "analysis")
+    if profile not in PROFILES or parallel_mode not in ("off", "analysis", "worktree"):
         raise ValueError("Invalid planning profile or parallel mode")
     if profile == "light":
         if parallel_mode != "off" or phase_count not in (None, 1):
@@ -292,6 +295,9 @@ def start(project, feature, max_phases=None, skills=None, skills_mode=None, comm
         document_bytes = pdf_snapshot(source_path)
         document = {"path": str(source_path), "sha256": sha256(document_bytes).hexdigest()}
     elif prior_package:
+        if (isinstance(prior.get("source_plan"), dict) and prior["source_plan"].get("origin") == "file"
+                and not (prior_package / ORIGINAL_PLAN).is_file()):
+            raise ValueError("Previous original plan is missing")
         if (prior_package / ORIGINAL_PLAN).is_file():
             original = source_snapshot(prior_package / ORIGINAL_PLAN)
             prior_source = prior.get("source_plan", source)
@@ -340,7 +346,8 @@ def start(project, feature, max_phases=None, skills=None, skills_mode=None, comm
             continue
     else:
         raise ValueError("Could not allocate a unique package directory")
-    data = {"schema_version": 3, "owner": OWNER, "feature": feature, "status": "draft",
+    data = {"schema_version": 4 if profile == "balanced" else 3,
+            "owner": OWNER, "feature": feature, "status": "draft",
             "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "max_phases": max_phases, "phase_count": phase_count,
             "skills": names, "skills_mode": skills_mode, "test_scope": test_scope,
@@ -356,7 +363,7 @@ def start(project, feature, max_phases=None, skills=None, skills_mode=None, comm
     if document_bytes is not None:
         with (package / SOURCE_DOCUMENT).open("xb") as stream:
             stream.write(document_bytes)
-    if profile != "light":
+    if profile == "detailed":
         (package / "prompts").mkdir()
     return {"package": str(package), "git_exclusion_verified": is_git, "ignore_rule": rule}
 
@@ -429,11 +436,122 @@ def relative_owner(value):
             and not any(char in value for char in "\\:*?[]"))
 
 
+def phased(data):
+    return data["schema_version"] >= 4 and data.get("profile") == "balanced"
+
+
+def merge_file(data):
+    return "MERGE_PROMPTS.md" if phased(data) else MERGE_FILE
+
+
+def phase_file(package, data, name):
+    return regular(package / name if phased(data) else package / "prompts" / name)
+
+
+def markdown_section(body, title):
+    """Read one current summary without returning the execution archive."""
+    selected, fence, lines = False, None, []
+    for line in body.splitlines(keepends=True):
+        marker = re.match(r"^\s*(`{3,}|~{3,})", line)
+        if marker:
+            token = marker[1]
+            if fence is None:
+                fence = token
+            elif token[0] == fence[0] and len(token) >= len(fence):
+                fence = None
+        if fence is None and not marker and line.startswith("## "):
+            if selected:
+                break
+            selected = line.strip() == "## " + title
+            continue
+        if selected:
+            lines.append(line)
+    return "".join(lines).strip()
+
+
+def phase_states(body):
+    return dict(re.findall(r"^\|\s*(P\d{2,})\s*\|\s*([A-Z_]+)\s*\|", body, re.MULTILINE))
+
+
+def status_summary(package, data, history=False):
+    name = "PLAN.md" if data.get("profile") == "light" else "STATUS.md" if phased(data) else "PROGRESS.md"
+    path = regular(package / name)
+    body = path.read_text(encoding="utf-8") if path.is_file() else ""
+    current = (markdown_section(body, "Current") or markdown_section(body, "Status")
+               or (markdown_section(body, "Progress") if data.get("profile") == "light" else ""))
+    if not current:
+        current = "No current summary recorded; inspect the identified status file."
+    result = {"status_file": name, "summary": current[:6000],
+              "summary_truncated": len(current) > 6000, "recorded_only": True}
+    if history:
+        result["history"] = body
+    if phased(data):
+        states = phase_states(markdown_section(body, "Current"))
+        graph = data.get("dependencies", {})
+        groups = data.get("parallel_groups", {})
+        groups = groups if isinstance(groups, dict) else {}
+        valid_groups = [group for group in groups.values() if text_list(group)]
+        grouped = {item for group in valid_groups for item in group}
+        startability = {}
+        for task, parents in graph.items() if isinstance(graph, dict) else ():
+            if not isinstance(parents, list) or any(not isinstance(parent, str) for parent in parents):
+                continue
+            waiting = [parent for parent in parents if states.get(parent) not in
+                       (("MERGED",) if parent in grouped and data.get("parallel_mode") == "worktree"
+                        else ("COMPLETE", "MERGED"))]
+            peers = [peer for group in valid_groups if task in group
+                     for peer in group if peer != task]
+            state = states.get(task, "UNKNOWN")
+            startability[task] = {"state": state, "waiting_for": waiting, "concurrent_with": peers,
+                                 "can_start_separately": state == "NOT_STARTED" and not waiting,
+                                 "live_preflight_required": True}
+        result["tasks"] = startability
+    return result
+
+
+def inspect_phased(package, data, phases, files, errors):
+    status = regular(package / "STATUS.md")
+    if status.is_file():
+        current = markdown_section(status.read_text(encoding="utf-8"), "Current")
+        states = phase_states(current)
+        allowed = {"NOT_STARTED", "IN_PROGRESS", "PAUSED", "BLOCKED", "VERIFIED",
+                   "MERGE_PENDING", "MERGED", "COMPLETE", "REVERTED"}
+        if set(states) != set(phases) or any(value not in allowed for value in states.values()):
+            errors.append("STATUS.md Current table must record every task exactly once with a valid state")
+        ids = re.findall(r"^\|\s*(P\d{2,})\s*\|", current, re.MULTILINE)
+        if len(ids) != len(set(ids)):
+            errors.append("STATUS.md has duplicate current task states")
+    index = regular(package / "PROMPTS.md")
+    index_body = index.read_text(encoding="utf-8") if index.is_file() else ""
+    for task, name in phases.items():
+        if not isinstance(name, str) or not relative_owner(name):
+            continue
+        if name not in index_body:
+            errors.append(f"PROMPTS.md must link the stored task prompt: {task}")
+        decision = regular((package / name).parent / "DECISIONS.md")
+        if decision.is_file():
+            files.append(decision)
+
+
+def inspect_commit_drafts(path, errors):
+    if not path.is_file():
+        return
+    blocks = [block.replace("\r\n", "\n").strip()
+              for block in COMMIT_BLOCK.findall(path.read_text(encoding="utf-8"))]
+    drafts = [block for block in blocks if block and COMMIT_SUBJECT.fullmatch(block.splitlines()[0])]
+    if not drafts:
+        errors.append(f"{path.name} needs copyable Conventional Commit blocks with detailed bodies; subject-only lists are incomplete")
+    for draft in drafts:
+        subject, _, body = draft.partition("\n\n")
+        if not body.strip():
+            errors.append(f"Commit message needs a body: {subject}")
+
+
 def inspect_modes(package, data, phases, files, errors):
     if data["schema_version"] < 3:
         return
     profile, mode = data.get("profile"), data.get("parallel_mode")
-    if profile not in ("detailed", "light") or mode not in ("off", "analysis", "worktree"):
+    if profile not in PROFILES or (data["schema_version"] < 4 and profile == "balanced") or mode not in ("off", "analysis", "worktree"):
         errors.append("Invalid planning profile or parallel mode")
         return
     if profile == "light" and (mode != "off" or list(phases) != ["P01"]):
@@ -444,13 +562,17 @@ def inspect_modes(package, data, phases, files, errors):
         errors.append("Parallel groups, tasks and merges must be objects")
         return
     if mode == "off":
-        if groups or tasks or merges or (package / MERGE_FILE).exists():
+        if groups or tasks or merges or (package / merge_file(data)).exists():
             errors.append("Sequential planning cannot contain parallel tasks or merges")
         return
     if not isinstance(data.get("parallel_reason"), str) or not data["parallel_reason"].strip():
         errors.append("Parallel planning needs an evidence-based parallel_reason, including when no split is safe")
-    if set(tasks) != set(phases):
-        errors.append("Parallel tasks must describe every phase")
+    members = [item for group in groups.values() if isinstance(group, list)
+               for item in group if isinstance(item, str)]
+    expected_tasks = set(members) if phased(data) else set(phases)
+    if set(tasks) != expected_tasks:
+        errors.append("Parallel tasks must describe every grouped phase" if phased(data)
+                      else "Parallel tasks must describe every phase")
         return
     valid_tasks = True
     task_roots = {}
@@ -499,7 +621,7 @@ def inspect_modes(package, data, phases, files, errors):
     if len(members) != len(set(members)):
         errors.append("A phase may belong to only one parallel group")
     if mode != "worktree":
-        if merges or (package / MERGE_FILE).exists():
+        if merges or (package / merge_file(data)).exists():
             errors.append("Merge prompts require worktree mode")
         return
     directories, branches = [], []
@@ -561,13 +683,14 @@ def inspect_modes(package, data, phases, files, errors):
         errors.append("Each isolated phase needs exactly one merge operation")
     dependency_graph(merge_graph, merges, "merge dependencies", errors)
     if merges:
-        path = regular(package / MERGE_FILE)
+        path = regular(package / merge_file(data))
         files.append(path)
-        for candidate in safe(package / "prompts").iterdir():
-            if candidate.name != path.name and (MERGE_ID.match(candidate.stem) or candidate.name.startswith("MERGE")):
+        candidates = package.rglob("*.md") if phased(data) else safe(package / "prompts").iterdir()
+        for candidate in candidates:
+            if candidate != path and (MERGE_ID.match(candidate.stem) or candidate.name.startswith("MERGE")):
                 errors.append("All merge prompts must use the single MERGE_PROMPTS.md file")
         if not path.is_file():
-            errors.append(f"Missing {MERGE_FILE}")
+            errors.append(f"Missing {merge_file(data)}")
         else:
             sections = prompt_sections(path)
             if set(sections) != set(merges):
@@ -575,7 +698,7 @@ def inspect_modes(package, data, phases, files, errors):
             for merge_id, body in sections.items():
                 if not body.partition("\n")[2].strip():
                     errors.append(f"Empty merge prompt: {merge_id}")
-    elif (package / MERGE_FILE).exists():
+    elif (package / merge_file(data)).exists():
         errors.append("Merge prompt file has no mapped operations")
 
 
@@ -583,13 +706,13 @@ def stored_prompt(package, data, prompt_id):
     if MERGE_ID.fullmatch(prompt_id):
         if prompt_id not in data.get("merges", {}):
             raise ValueError(f"Unknown merge: {prompt_id}")
-        return prompt_sections(package / MERGE_FILE)[prompt_id]
+        return prompt_sections(package / merge_file(data))[prompt_id]
     name = (data.get("phases") or {}).get(prompt_id)
     if not name:
         raise ValueError(f"Unknown phase: {prompt_id}")
     if data.get("profile") == "light":
         return prompt_sections(package / "PLAN.md")[prompt_id]
-    return regular(package / "prompts" / name).read_text(encoding="utf-8")
+    return phase_file(package, data, name).read_text(encoding="utf-8")
 
 
 def inspect(package):
@@ -602,23 +725,19 @@ def inspect(package):
         if checked_git(root, "ls-files", "--", package.parent.relative_to(root).as_posix()).strip():
             errors.append("Package output is tracked")
     light = data.get("profile") == "light" and data["schema_version"] >= 3
-    required = (("PLAN.md",) if light else SHARED) + ((ORIGINAL_PLAN,) if data["schema_version"] >= 2 else ())
+    required = ("PLAN.md",) if light else PHASED_SHARED if phased(data) else SHARED
+    needs_original = (data["schema_version"] >= 2 and
+                      (not phased(data) or (isinstance(data.get("source_plan"), dict)
+                                            and data["source_plan"].get("origin") == "file")))
+    required += (ORIGINAL_PLAN,) if needs_original else ()
     files = [package / name for name in required]
     for name, path in zip(required, files):
         if not regular(path).is_file():
             errors.append(f"Missing {name}")
         elif not path.read_text(encoding="utf-8").strip():
             errors.append(f"Empty {name}")
-    messages = regular(package / ("PLAN.md" if light else "COMMIT_MESSAGES.md"))
-    if messages.is_file():
-        blocks = [block.replace("\r\n", "\n").strip() for block in COMMIT_BLOCK.findall(messages.read_text(encoding="utf-8"))]
-        drafts = [block for block in blocks if block and COMMIT_SUBJECT.fullmatch(block.splitlines()[0])]
-        if not drafts:
-            errors.append(f"{messages.name} needs copyable Conventional Commit blocks with detailed bodies; subject-only lists are incomplete")
-        for draft in drafts:
-            subject, _, body = draft.partition("\n\n")
-            if not body.strip():
-                errors.append(f"Commit message needs a body: {subject}")
+    if not phased(data):
+        inspect_commit_drafts(regular(package / ("PLAN.md" if light else "COMMIT_MESSAGES.md")), errors)
     if data["schema_version"] >= 2:
         source = data.get("source_plan")
         if not isinstance(source, dict) or source.get("origin") not in ("file", "session"):
@@ -667,6 +786,9 @@ def inspect(package):
         elif len(set(phases.values())) != len(phases):
             errors.append("Phase prompts must have distinct files")
         for phase, name in phases.items():
+            if not isinstance(phase, str) or not isinstance(name, str):
+                errors.append(f"Invalid phase prompt mapping: {phase}")
+                continue
             if light:
                 if phase != "P01" or name != "PLAN.md#P01":
                     errors.append("Light prompt must map P01 to PLAN.md#P01")
@@ -675,15 +797,20 @@ def inspect(package):
                     if not section.partition("\n")[2].strip():
                         errors.append("Missing or empty light execution section P01")
                 continue
-            if not PHASE_ID.fullmatch(phase) or not isinstance(name, str) or not re.fullmatch(r"P\d{2,}_[A-Z0-9_]+\.md", name):
+            expected_name = f"phase-{phase[1:]}/PROMPT.md" if phased(data) else None
+            valid_name = (name == expected_name if phased(data) else
+                          bool(re.fullmatch(r"P\d{2,}_[A-Z0-9_]+\.md", name)))
+            if not PHASE_ID.fullmatch(phase) or not valid_name:
                 errors.append(f"Invalid phase prompt mapping: {phase}")
                 continue
-            prompt = regular(package / "prompts" / name)
+            prompt = phase_file(package, data, name)
             files.append(prompt)
             if not prompt.is_file():
                 errors.append(f"Missing prompt for {phase}: {name}")
             elif phase not in prompt.read_text(encoding="utf-8"):
                 errors.append(f"Prompt does not identify {phase}: {name}")
+            if phased(data):
+                inspect_commit_drafts(prompt, errors)
     assignments = data.get("skill_assignments")
     names = data.get("skills")
     if not text_list(names, allow_empty=True) or not isinstance(assignments, dict) or set(assignments) != set(names):
@@ -697,6 +824,8 @@ def inspect(package):
             elif data.get("skills_mode") == "all" and set(assigned) != set(phases):
                 errors.append(f"Skill is missing from an all-mode prompt: {name}")
     inspect_modes(package, data, phases, files, errors)
+    if phased(data):
+        inspect_phased(package, data, phases, files, errors)
     for path in files:
         if not path.is_file() or path.name == ORIGINAL_PLAN:
             continue
@@ -763,7 +892,7 @@ def main(argv=None):
     command.add_argument("--previous")
     command.add_argument("--source-plan")
     command.add_argument("--source-document")
-    command.add_argument("--profile", choices=("detailed", "light"))
+    command.add_argument("--profile", choices=PROFILES)
     command.add_argument("--parallel-ready", nargs="?", const="analysis", choices=("off", "analysis", "worktree"))
     command = commands.add_parser("list")
     command.add_argument("--project", required=True)
@@ -772,6 +901,8 @@ def main(argv=None):
         command.add_argument("--package", required=True)
         if name == "prompt":
             command.add_argument("--phase", required=True, help="Stored Pxx execution or Mxx merge prompt ID")
+        if name == "status":
+            command.add_argument("--history", action="store_true", help="Include the identified ledger, without traversing evidence files")
     args = parser.parse_args(argv)
     try:
         if args.action == "start":
@@ -793,8 +924,10 @@ def main(argv=None):
             if args.action == "skills":
                 result = {key: result[key] for key in ("package", "skills", "skill_assignments")}
             if args.action == "status":
-                progress = regular(Path(args.package) / ("PLAN.md" if result["profile"] == "light" else "PROGRESS.md"))
-                result["progress"] = progress.read_text(encoding="utf-8") if progress.is_file() else None
+                data = read_json(Path(args.package) / ".package.json")
+                summary = status_summary(safe(args.package), data, args.history)
+                result = {key: result[key] for key in ("package", "status", "profile", "errors")}
+                result.update(summary)
         print(json.dumps(result, indent=2))
         return 1 if args.action == "check" and result["errors"] else 0
     except (OSError, ValueError, KeyError, json.JSONDecodeError) as error:

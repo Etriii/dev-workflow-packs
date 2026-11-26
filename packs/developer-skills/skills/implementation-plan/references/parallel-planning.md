@@ -1,71 +1,68 @@
-# Parallel preparation and merge prompts
+# Parallel preparation and integration
 
-Read only for parallel preparation. `--parallel-ready` means `analysis`; `--parallel-ready=worktree` additionally prepares isolated Git execution and integration instructions. `--parallel-ready=off` removes parallel preparation in a new revision. Light mode cannot combine with analysis/worktree. Planning performs read-only Git inspection and package writes, never branch/worktree creation, implementation, merges or deletion. No unattended executor or scheduler is installed.
+Balanced assesses independence by default, preparing worktrees for safe groups inside Git and analysis outside Git. Detailed stays sequential unless selected. Bare --parallel-ready means analysis; =worktree requires Git; =off disables preparation in a new revision. Light permits off only. These are instructions for later execution: planning never creates a branch/worktree, launches a worker, merges or deletes anything.
 
-## Establish independence
+## Prove the split
 
-Trace behavior, contracts and transitive dependencies before grouping tasks. Account for shared files, generated outputs, schema/migration ordering, API/data contracts, databases, workers, ports, fixtures and test resources. Different filenames alone do not establish independence. Record every phase's prerequisites, concrete owned repository-relative paths, mutable resources, exact package reading set, output and reason. Shared read-only contracts are allowed; mutable shared state must be isolated or serialized. Freeze shared contracts for a parallel group; contract changes require coordinator review and revalidation of affected workers.
+Trace contracts, transitive dependencies, owned files, generated outputs and mutable resources (databases, workers, ports, fixtures). Different filenames are insufficient. Shared read-only contracts are allowed; freeze them for a group and revalidate affected workers after changes. Unknown coupling stays sequential. A small task may be cheaper sequentially; no safe split with a specific reason is a valid result.
 
-Describe eligible groups in PHASES.md with source-backed reasons and a dependency/ownership table. A phase belongs to at most one group. Do not group transitive dependencies or overlapping ownership. Unknown coupling is sequential. A valid result is no parallel group with a specific explanation. Integration and merge work belong to identified phases and count in sizing, dependencies and acceptance; do not disguise extra work to fit `--max-phases`.
+PROMPTS.md marks each task's prerequisite/start condition, separate-session eligibility and safe concurrent partners. Separate sessions are not automatically concurrent. Include integration work in the named task ownership/count rather than hiding an extra stage. Preserve the current integration branch unless the user selected another target. A grouped worker needs an actual committed baseline; detached/unborn Git state cannot be guessed into readiness.
 
-Analysis mode does not promise concurrent writes in a shared checkout. Read-only work may overlap; simultaneous writers require verified isolation through worktrees or separate checkouts. Preserve the current branch; record another integration target only when selected. In detached/unborn Git state, settle a real branch and committed baseline before marking worktree prompts ready.
+Balanced records grouped worker ownership/read sets/resources only; ungrouped tasks retain their normal prompt/dependencies. Legacy schema 3 analysis describes every phase. No groups means no worktree identities or merge file.
 
-## Worktree execution contract
+## Worker lifecycle
 
-For each grouped task identify one Git root, actual committed baseline, new task-owned branch, separate absolute worktree directory and integration target. A task that spans coupled repositories stays sequential unless it can be coherently split within the confirmed scope/count. For multiple repositories use separate per-repository merge operations. An instruction naming a branch is not isolation; each simultaneous writer needs a different working directory and index. Choose short sibling worktree paths, avoiding nesting and collisions.
+Every invoked isolated task must:
 
-Every later worker prompt must:
+1. Inspect live root/branch/HEAD/status and existing worktrees/refs. Validate baseline relevance and ownership. Never reset, stash unrelated changes, silently move the baseline or reuse an unowned branch/directory.
+2. Create only its named branch and separate absolute worktree after invocation; choose short sibling paths, never nested directories. Record ownership, baseline and created paths. Resume existing work only after its identity matches.
+3. Verify exact ignored-package access; .implementation-plans does not follow Git branches. Read the canonical package through its absolute path or copy only the needed files and verify hashes before writing source. Explicitly run source commands in the worker worktree.
+4. Isolate mutable resources and complete owned implementation/tests plus directly related corrections. Resolve routine reversible choices; a newly discovered ownership or shared-contract conflict stops only dependent work and requires a recorded resolution before crossing that boundary.
+5. Store actual commands, source/commit identity, results and material remaining gates under phase-NN/outputs/ for Balanced, or evidence/<phase-id>/ for legacy packages. Meaningful worker decisions go in the owned output DECISIONS.md; one integration owner folds results into shared STATUS/DECISIONS (legacy PROGRESS/HANDOFF). Workers never race to rewrite shared files. Transfer and verify evidence before cleanup.
+6. Respect saved commit policy: off leaves owned changes with a detailed draft and integration pending; scoped permits and auto requires verified owned local commits. Failed required checks, missing prerequisites and no owned changes prevent a commit. Stop after this selected task with a recommended next move and copyable prompt; do not merge or launch another worker automatically.
 
-1. Inspect live Git roots, branch/HEAD, status and existing worktrees/refs. Verify the saved baseline still applies; do not silently move it, reset, stash unrelated changes, or reuse an unowned branch/directory. Record stale planning evidence and revalidate before changes.
-2. Create only its named branch/worktree after the prompt is explicitly invoked. Preserve the integration checkout and unrelated work. Record created paths, branch and baseline as task-owned evidence. Existing owned work resumes only after matching those records.
-3. Verify access to the exact package revision and its relevant read set. Ignored `.implementation-plans/` files do not follow branches. Use the canonical absolute package path read-only or copy the required files, wait for copying to finish and verify hashes. Rewrite working-directory instructions explicitly rather than accidentally editing the canonical checkout.
-4. Use isolated mutable test/runtime resources and concrete ownership. Stop and report a discovered shared-contract or ownership conflict; do not edit another worker's scope.
-5. Run required checks and record observed result, source commit, outstanding work and commit drafts in a task-owned evidence file in the canonical package's `evidence/<phase-id>/` directory. One coordinator alone updates canonical PROGRESS.md, HANDOFF.md, shared contracts and COMMIT_MESSAGES.md; workers submit drafts rather than racing on those documents. Verify artifact transfer before removing a worktree.
-6. Respect saved commit policy. With commits off, leave the result ready for an explicit commit request; mark merge pending. With scoped/auto, commit only verified owned changes as authorized. Record the actual branch, HEAD and checks. Stop at the selected task; do not merge or start another task automatically.
+Coupled multi-repository tasks stay sequential unless split coherently. Different repositories require separate integration operations.
 
-## One file for all merge prompts
+## One shared merge file
 
-Write exactly `prompts/MERGE_PROMPTS.md` when isolated tasks exist; do not write one merge file per task. Use exact level-two headings `## M01`, `## M02`, and so on, with a descriptive objective underneath and `---` between sections. Use level-three headings within a section. Include shared rules in this file before its sections, but each selected section must explicitly tell the executing agent to read those shared rules and the named relevant package sections. The `prompt` accessor returns only the selected section, not the whole file.
+Balanced uses root MERGE_PROMPTS.md; legacy Detailed uses prompts/MERGE_PROMPTS.md. Exactly one file holds all named operations with exact level-two headings such as ## M01 and ## M02, shared rules first, descriptive objectives and separators. Nested headings are level three or deeper. PROMPTS.md links the sections; do not duplicate bodies.
 
-Each section states its exact package and repository, integration target and planning baseline, source phases/branches and dependency gates, owner phase, verification commands, evidence destinations, conflict/recovery rules and cleanup eligibility. Include one copyable agent-chat request with real absolute paths:
+Each operation identifies the exact package/repository, target and source branches, actual baseline, dependencies, owner, required combined checks, evidence/decision destinations, allowed corrections and recovery/cleanup rules. Include one copyable request with real paths:
 
-```text
-Execute only M01 from "<exact-package>/prompts/MERGE_PROMPTS.md". Read its shared rules and selected section, verify live prerequisites, integrate only its named committed work, run required checks, preserve evidence, perform eligible owned cleanup, record the outcome and stop.
-```
+~~~text
+Execute only M01 from "<exact-package>/MERGE_PROMPTS.md". Read shared rules and its selected section. Integrate only its named verified commits, complete affected integration checks and clear in-scope corrections, preserve evidence, remove eligible owned worktrees and safely delete merged branches, record the outcome and stop.
+~~~
 
-This request is for a later execution session, not a shell command and not a planning-skill invocation. Do not require `$implementation-plan` in it. PROMPTS.md links to the file's `#m01`, `#m02` anchors; no duplicated bodies. `prompt <package> M01` displays one section read-only. Copying and invoking the execution request authorizes only that local integration and guarded owned cleanup, including a necessary merge commit; it does not authorize source-code fixes, committing dirty worker changes, pushing, deployment or another merge operation.
+Use the legacy path for old layouts. The accessor displays only the named section; it must instruct the agent to read shared rules. Displaying a request grants no execution permission. Invoking it authorizes that named local integration, necessary merge commit and guarded cleanup, not dirty worker commits, unrelated code, push, deployment or another operation. Corrections requiring product-policy decisions or additional scope remain separate.
 
-## Integration, failure and recovery
+## Integration and recovery
 
-One coordinator integrates serially. Before touching the target, establish all of the following:
+One owner integrates serially. Establish exact live refs and worker-tested source commits, completed prerequisites, a clean target and no existing Git operation. Inspect target drift since the baseline and revalidate affected assumptions. Source commits must match verified work. Uncommitted results or missing required proof leave MERGE_PENDING. A planned hash alone is not implementation evidence.
 
-- The exact package, repository, target branch, source branches and expected actual source commits are identified by live refs and worker evidence. Source commits match the changes that were verified. A planned baseline hash alone is not implementation proof.
-- The selected merge's prerequisites and required worker checks are complete. Uncommitted results, stale evidence, failed/skipped required checks and unknown ownership leave `MERGE_PENDING`. A merge request never silently enables source commits.
-- The target checkout is clean, no Git operation is in progress, and its HEAD is suitable for this integration. Inspect target changes since the recorded baseline and revalidate affected assumptions/checks. Do not assume a dirty main checkout is disposable.
+Use explicit refs and repository merge policy. Never force-update, automatically rebase/squash, reset or stash. Already-landed exact source commits are recognized on resume; do not replay them. Resolve only mechanically clear conflicts or integration regressions within the named owned scope, preserving intended source/target behavior and recording meaningful choices. Ambiguous contracts, unknown ownership and destructive choices stop dependent integration with recoverable hashes, conflict paths, operation state and a copyable recovery request.
 
-Integrate only named refs using the repository's merge policy. Use explicit refs and record actual source and target hashes; do not force-update refs or automatically rebase, squash, resolve ambiguous conflicts, reset or stash. If the exact source commits are already ancestors of the target, record that rather than merging again. Previously completed operations must not replay on resume.
+After merging, run affected combined checks on the target, beyond worker checks. Fix clear authorized integration failures and rerun affected proof. If required checks still fail or scope is insufficient, retain source branches/worktrees/evidence and record the landed commit and exact next action. Never remove recovery material to make the state look complete.
 
-On a conflict, stop additional merges and cleanup. Record conflicted paths, operation state, source/target hashes and the exact resume action. Leave the state recoverable; do not invent a resolution or declare integration complete. After a successful merge, run the selected combined checks on the integrated target, beyond individual worker checks. On failure retain branches/worktrees/evidence, record `MERGE_PENDING` with the landed commit and failing command, and stop. A retry recognizes landed commits and reruns outstanding proof rather than duplicating merges. Application fixes require separately authorized scope.
+Only after combined proof passes:
+- Verify all worker source commits are reachable from the target.
+- Copy/verify needed ignored/untracked artifacts and decision records into durable package storage.
+- Verify every branch/worktree is task-owned, clean and no longer needed by another worker.
+- Remove only those exact owned worktrees and use git branch -d, never force deletion.
+- Verify Git registration and directory existence, especially on Windows. Before any recursive filesystem removal, resolve and check the absolute target against the recorded owned path.
 
-Only after combined proof passes, copy/verify durable task evidence and untracked/ignored deliverables needed for recovery. Verify every source commit is reachable from the target, each branch/worktree is recorded as task-owned, worktrees have no uncommitted changes, no worktree still needs a branch, and all referenced artifacts remain accessible. Remove only those exact owned worktrees and use safe merged-branch deletion (`git branch -d`), never force deletion. Cleanup failure is recorded separately from successful integration; verify both Git registration and directory existence, especially on Windows. Never recursively delete a computed directory without checking its resolved target. If ignored/untracked artifacts are valuable or ownership is uncertain, leave cleanup pending. Do not remove pre-existing worktrees or branches.
+Uncertain ownership, valuable unpreserved artifacts or a dirty worktree leave cleanup pending. Do not remove pre-existing worktrees. Cleanup failure is reported independently from successful integration. Update canonical current source/target identities, checks, decisions, cleanup outcome and recommended next request. Stop at the named operation.
 
-PROGRESS.md records source commits, resulting target commit, actual checks, integration state and cleanup outcome; HANDOFF.md identifies the exact next outstanding action. Completing a merge does not run the next task or merge section.
+## Metadata
 
-## Schema 3 metadata
-
-Keep source snapshots, sizing and saved policies intact. Populate these fields manually after reservation, then run the helper check:
+Schema 4 Balanced and schema 3 Detailed share these fields; profile/layout-specific files differ:
 
 | Field | Contract |
 |---|---|
-| `profile` | `detailed` for parallel work. |
-| `parallel_mode` | `analysis` or `worktree`. |
-| `dependencies` | Every Pxx maps to a list of existing prerequisite IDs; acyclic. |
-| `parallel_reason` | Evidence-based rationale, including why no split is safe when groups are empty. |
-| `parallel_groups` | Gxx maps to at least two mutually independent Pxx IDs. A phase appears once at most. |
-| `parallel_tasks` | Every Pxx maps to `owned_paths` (concrete paths, no traversal or glob patterns), `write_resources` (unique mutable-resource names; may be empty), `read_set` (existing package-relative files with optional fragments), and a specific `reason`. |
-| Worktree task identity | Each grouped task additionally has absolute `repository` and `worktree`, valid `branch`, and actual `base_commit` (full SHA). Directory and repository identities must not be nested; task worktrees and branch identities must be distinct. |
-| `merges` | Mxx maps to `phases` (isolated sources, each covered exactly once), `owner_phase` (existing integration-work owner), `repository` (matching source root), `target_branch` (different from source branches), `target_commit` (actual planning baseline SHA), and `depends_on` (existing merge IDs; acyclic). Analysis/sequential modes have no merges. |
+| dependencies | Every Pxx maps to prerequisite IDs; ordered, existing and acyclic. |
+| parallel_reason | Source-backed rationale, including when no split is safe. |
+| parallel_groups | Gxx maps to at least two independent Pxx IDs; each appears in at most one group. |
+| parallel_tasks | Schema 4 maps exactly grouped phases; schema 3 maps all phases. Each has concrete owned_paths, isolated write_resources (possibly empty), existing relative read_set files/fragments, and a reason. |
+| Worktree identity | Grouped worktree tasks additionally have absolute repository/worktree, distinct branch and actual full base_commit. Worktrees are outside the source checkout and not nested in each other. |
+| merges | Mxx identifies phases (each isolated source covered once), existing owner_phase depending on its sources, repository, different target_branch, actual target_commit and acyclic depends_on merge IDs. Analysis/off have no merges. |
 
-The helper checks graph consistency, concrete overlap, resource collisions, worktree identities and exact section mapping. It reads Git to check root/ref syntax; it does not create worktrees, determine semantic independence, prove that live implementation matches the plan, run tests or perform integration. The author still reviews dependency timing, read-set relevance, acceptance coverage, shared contracts, actual baselines and complete guarded execution/merge instructions. No safe split means empty groups/merges and no merge file, with the reason recorded.
-
-On revision, inherit profile/mode and saved options unless explicitly changed, preserve previous files and valid results, then rebuild affected graphs/prompts from current source and record invalidated evidence. Do not copy a stale ready claim. Turning parallel mode off clears its task/group/merge metadata in the new revision, retaining phase dependencies and explaining outstanding branches/evidence that still need separately authorized recovery.
+The helper checks graph/file/resource/worktree/merge structure and live Git ref syntax/existing baseline commits. It never determines semantic independence, mutates Git, runs worker checks or certifies native agent adherence. Manually review read-set relevance, shared resources, ownership and source-bound acceptance before marking ready. Disabling parallel preparation clears new revision metadata without deleting outstanding worktrees or their recovery evidence.
