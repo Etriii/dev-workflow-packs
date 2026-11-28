@@ -108,24 +108,26 @@ $request-review --summary
 
 Use `/request-review` with the same arguments in Claude Code. Existing accessible `.md` and `.txt` requirements are also accepted; attached PDFs work when the host exposes them. A PDF plus additional chat instructions is one review, with both sources mapped. The agent inventories all relevant PDF pages and uses available text extraction, rendering, visual inspection or OCR; unreadable passages remain blockers. `--detailed` changes the report depth only. `--summary` uses an identified recorded review, applies eligible unanswered defaults and does not reassess code; if no review or several plausible reviews exist, the agent asks which one. Display depth persists until changed.
 
-The review reads application code, guards/policies, tests, configuration and safe local evidence as relevant. It verifies routes, roles and current behavior rather than trusting page names. Default output is grouped by application area with English request, finding, recommendation, concise file table and decisions. Detailed adds original wording/source references, narrow inspected lines, rationale, data/access effects, acceptance, dependencies and remaining investigation. Neither report claims suggested edits were made. Both ask material questions after source inspection and distinguish source, runtime and deployed evidence. A concise example (fictional):
+The review reads application code, guards/policies, tests, configuration and safe local evidence as relevant. It verifies routes, roles and current behavior rather than trusting page names. Default output is grouped by application area, each beginning with a four-column table: `ID — Request summary | Original request — verbatim | Finding | Recommendation / readiness`. The original passage sits immediately after the English summary, with its source and physical PDF page when applicable. Quotations keep their original language; excerpts and omissions are marked, material conditions and all merged source mappings are retained, and unavailable wording is identified rather than invented.
+
+Each finding explains current behavior, its gap or match against the request, and the evidence level and limits. Each recommendation explains proposed behavior, material safeguards and unresolved decisions, with readiness when useful. A status alone is insufficient; an already-satisfied request can stay brief when its matching behavior and verification are clear. Supporting details keyed by ID retain page/access, type, concise file tables and decisions. `--detailed` keeps that overview and adds narrow inspected lines, expanded evidence, rationale, data/access effects, acceptance, dependencies and remaining investigation. Neither report claims suggested edits were made. Both ask material questions after source inspection and distinguish source, runtime and deployed evidence. A concise example (fictional):
+
+**Announcements**
+
+| ID — Request summary | Original request — verbatim | Finding | Recommendation / readiness |
+|---|---|---|---|
+| REQ-01 — Hide expired notices from the active PACD banner | “Expired notices remain on PACD.” — chat feedback | The source query does not filter expiry, so expired notices can remain in the active banner. Source inspected; runtime not checked. | Filter active notices and retain archive access. Archive-only retention: Default applied. Ready to plan; browser verification remains pending. |
 
 ```text
-Announcements
-
-REQ-01 - Expired notices
-Request: Hide expired notices from the active PACD banner.
+REQ-01 - Supporting details
 Page: PACD dashboard - /pacd/dashboard
 Access: Signed-in PACD staff, assigned division only.
 Type: Bug report
-Finding: The source query does not filter expiry; runtime not checked.
-Recommendation: Filter active notices and keep the archive available.
 File | Proposed action | Purpose
-app/Notices.php | Modify | Fix active filtering
-Decision: Keep expired notices in archive - Default applied.
+app/Notices.php | Proposed modification | Fix active filtering
 ```
 
-The detailed form of that fictional review also includes `Original: “Expired announcements appear on PACD” - requirements.pdf, page 4`, the inspected source range, a proposed filtering acceptance check and a separate browser verification gap. A fictional confirmation summary is:
+The detailed form keeps the same original quotation and overview, then adds the inspected source range, rationale and a proposed filtering acceptance check. A fictional confirmation summary is:
 
 ```text
 Announcements
