@@ -1,6 +1,6 @@
 # Request Review
 
-Review informal development feedback or a requirements PDF against the current application. The review preserves original wording and source references, checks current behavior and access, asks focused questions, and produces a categorized review or short scope summary. It does not edit the application by default. See [agent instructions](SKILL.md), [output rules](references/review-workflow.md), and the [collection command guide](../../../../docs/SKILL_COMMANDS.md).
+Review informal development feedback or a requirements PDF against the current application. The review preserves original wording and source references, checks current behavior and access, asks focused questions, and produces a categorized review, short scope summary or neutral client revision summary. It does not edit the application by default. See [agent instructions](SKILL.md), [output rules](references/review-workflow.md), [client-summary rules](references/client-summary.md), and the [collection command guide](../../../../docs/SKILL_COMMANDS.md).
 
 Skill responses and generated reports are in English, including for Tagalog or Bisaya requests. Original quotations, code, identifiers, and application content keep their source language when needed for accuracy.
 
@@ -82,7 +82,7 @@ For copied global agent destinations, use the global `add ... -g --copy` alterna
 
 ## Agent-chat interface
 
-These are chat requests, never terminal commands. Open the target application; identify an external related repository naturally if needed. A bare invocation uses clearly supplied requests or an attachment. If there is none, the agent asks for the request and does not select unrelated earlier content. A missing path-like document is an error. Quote file paths with spaces. Options may precede or follow a document. Unknown flags, competing documents, and `--summary` combined with new input or `--detailed` are invalid. A natural “help” request prints these main forms briefly.
+These are chat requests, never terminal commands. Open the target application; identify an external related repository naturally if needed. A bare invocation uses clearly supplied requests or an attachment. If there is none, the agent asks for the request and does not select unrelated earlier content. A missing path-like document is an error. Quote file paths with spaces. Options may precede or follow a document in new reviews. Unknown/duplicate flags, competing documents, and `--summary` combined with new input or `--detailed` are invalid. `--client` uses an already identified review; new input and `--summary` cannot be combined with it. A natural “help” request prints these main forms briefly.
 
 ```text
 $request-review
@@ -106,9 +106,17 @@ $request-review "requirements with spaces.pdf" --detailed
 $request-review --summary
 ```
 
-Use `/request-review` with the same arguments in Claude Code. Existing accessible `.md` and `.txt` requirements are also accepted; attached PDFs work when the host exposes them. A PDF plus additional chat instructions is one review, with both sources mapped. The agent inventories all relevant PDF pages and uses available text extraction, rendering, visual inspection or OCR; unreadable passages remain blockers. `--detailed` changes the report depth only. `--summary` uses an identified recorded review, applies eligible unanswered defaults and does not reassess code; if no review or several plausible reviews exist, the agent asks which one. Display depth persists until changed.
+```text
+$request-review --client
+```
 
-The review reads application code, guards/policies, tests, configuration and safe local evidence as relevant. It verifies routes, roles and current behavior rather than trusting page names. Default output is grouped by application area, each beginning with a four-column table: `ID — Request summary | Original request — verbatim | Finding | Recommendation / readiness`. In the original-request cell, every PDF quotation is immediately followed by its filename and physical page: `“Exact source wording.” — requirements.pdf, page 6`. Default, detailed and saved reviews use the same placement. Request headings contain the ID and English summary; application routes appear in page/access details. A differing printed page label is recorded separately. Merged requests retain each original passage with its own source/page citation. Chat quotations end with `— chat feedback`; Markdown/text quotations identify their filename and an inspected section or line when available. An unknown PDF page is explicitly marked `Source page not verified`. Quotations keep their original language; excerpts and omissions are marked, material conditions are retained, and unavailable wording or pages are never invented.
+```text
+$request-review --client --detailed
+```
+
+Use `/request-review` with the same arguments in Claude Code. Existing accessible `.md` and `.txt` requirements are also accepted for new reviews; attached PDFs work when the host exposes them. A PDF plus additional chat instructions is one review, with both sources mapped. The agent inventories all relevant PDF pages and uses available text extraction, rendering, visual inspection or OCR; unreadable passages remain blockers. `--detailed` changes the report depth only. `--summary` uses an identified recorded review, applies eligible unanswered defaults and does not reassess code. `--client` and `--client --detailed` reuse recorded scope, evidence and answers without investigating again or applying new defaults. If no review or several plausible reviews exist, the agent asks for one or which one. Presentation/depth persists on natural follow-ups until changed; “show the details” in client mode retains client wording. Explicit `--client` selects the ordinary client view, `--client --detailed` selects its detailed view, and `--summary` selects the scope summary. The two client flags work in either order. To review a new document, use the ordinary document invocation first, then request client output.
+
+The review reads application code, guards/policies, tests, configuration and safe local evidence as relevant. It verifies routes, roles and current behavior rather than trusting page names. Ordinary default output is grouped by application area, each beginning with a four-column table: `ID — Request summary | Original request — verbatim | Finding | Recommendation / readiness`. In the original-request cell, every PDF quotation is immediately followed by its filename and physical page: `“Exact source wording.” — requirements.pdf, page 6`. Ordinary default, detailed and saved full reviews use the same placement; client output has its own block layout below. Request headings contain the ID and English summary; application routes appear in page/access details. A differing printed page label is recorded separately. Merged requests retain each original passage with its own source/page citation. Chat quotations end with `— chat feedback`; Markdown/text quotations identify their filename and an inspected section or line when available. An unknown PDF page is explicitly marked `Source page not verified`. Quotations keep their original language; excerpts and omissions are marked, material conditions are retained, and unavailable wording or pages are never invented.
 
 Each finding explains current behavior, its gap or match against the request, and the evidence level and limits. Each recommendation explains proposed behavior, material safeguards and unresolved decisions, with readiness when useful. A status alone is insufficient; an already-satisfied request can stay brief when its matching behavior and verification are clear. Supporting details keyed by ID retain page/access, type, concise file tables and decisions. `--detailed` keeps that overview and adds narrow inspected lines, expanded evidence, rationale, data/access effects, acceptance, dependencies and remaining investigation. Neither report claims suggested edits were made. Both ask material questions after source inspection and distinguish source, runtime and deployed evidence. A concise example (fictional):
 
@@ -157,6 +165,77 @@ Answer: Pending. The template is needed to verify columns, totals, layout and si
 
 The three-question limit applies only to each interactive prompt, never to the final list. A question first presented in the closing section remains pending until there has been a reasonable answer opportunity; recommendations are not silently defaulted before presentation. A preselected UI choice is not a submitted answer. “Q-01: Use option 2” later records **Selected by user**, updates acceptance checks, and retains the prior default in revision history. Providing a factual answer does not prove uninspected evidence. Filtered follow-ups still include the full Q&A, labeling questions about excluded or out-of-view requests without restoring their scope. Resolved questions stay listed with their current answers instead of being asked again; unresolved user questions cannot be left only in notes or replaced by default-only bullets. If none exist, the closing section says so briefly.
 
+## Client revision summary
+
+Use `$request-review --client` after identifying a completed or partial review in the conversation or its full saved handoff. It reads that review's original requests, scope, evidence, questions and answers; it does not start a new investigation, apply defaults, grant approval, send messages, write files or implement changes. If the available review is incomplete or older, its missing information and relevant evidence limits remain visible. No plan-review installation is required to render this view; a separate solution/readiness investigation still uses plan-review when explicitly requested.
+
+The output is titled **Revision summary**, with neutral revision statements instead of a letter addressed to the client. Every request stays in source order with a short `REQ-xx — Title`, separated by horizontal rules and blank lines. Each block contains **Original request**, **Change type**, **Problem**, **Deliverables**, **Expected result**, and a short **Information needed** only when necessary. Change type is Addition, Modification, Removal, Correction, Refactor or Reuse, with combinations allowed; it is separate from approval and completion. Already-satisfied requests explain what will be retained, and excluded/deferred work is labeled rather than promised as an included deliverable.
+
+PDF original wording ends with the verified physical page only, for example `“Exact wording.” — Page 6`. Source labels outside the quotation line disambiguate multiple documents; all original mappings remain in the full review. Chat has `— Chat feedback`; Markdown/text identifies an inspected source section/line when available. Missing pages or unreadable text are marked, never invented. Source language and material role/access, data-preservation and dependency conditions are retained.
+
+Mark the specific detail added during review with **(proposed; not specified in the request)**, including developer-selected answers and applied defaults that lack explicit client confirmation. Do not infer client approval from the review user's answer or from silence. Omit formal per-request “Decisions for confirmation” paragraphs. When proposed details exist, use the one clarification note shown below, after the revision blocks and any verification/notes and before the complete bottom Q&A. Otherwise omit it. Information requests stay short and factual; unresolved facts never become defaults. A fictional excerpt:
+
+```text
+Revision summary
+
+The following revisions describe the proposed deliverables and expected results.
+
+REQ-01 — Expired notices
+
+Original request: “Expired notices remain on PACD.” — Page 4
+Change type: Correction
+Problem: The inspected query does not filter expiry; runtime behavior remains unverified.
+Deliverables:
+- Filter expired notices from the active PACD banner.
+- Keep expired notices in the archive (proposed; not specified in the request).
+- Retain the existing PACD role and assigned-division access restrictions.
+Expected result: Active banners show current notices while earlier notices remain accessible in the archive.
+
+---
+
+REQ-02 — Official monthly report format
+
+Original request: “Follow the official monthly report template.” — Page 7
+Change type: Modification
+Problem: Format compliance cannot be verified without the official template.
+Deliverables:
+- Compare the existing monthly report with the supplied template.
+- Revise confirmed format differences once the template is available.
+Expected result: The monthly report follows the supplied official format.
+Information needed: Official monthly report template — Q-02. Exact format changes remain undetermined.
+
+Details marked “proposed” were added during review because the original requests did not specify them. Clarify any changes before implementation.
+
+Questions and answers
+
+Q-01 — REQ-01: Where should expired notices remain available?
+1. Archive only — Recommended / Default. Keeps history outside the active banner.
+2. Active with an Expired label. Keeps expired notices in the active view.
+Answer: No answer received; option 1 was used as the proposed approach.
+
+Q-02 — REQ-02: Which official template defines the monthly report format?
+Answer: Pending — the official template copy is needed. No factual default applies.
+```
+
+`$request-review --client --detailed` uses exactly the same wording and proposed markers, adding **Affected routes and files**, **Acceptance checks**, and material **Dependencies** under each request. It reads already recorded locations; missing locations remain unverified instead of triggering a new investigation. For the same fictional notice request, the additions could be:
+
+| Area | Location | Planned change |
+|---|---|---|
+| Application route | `/pacd/dashboard` | Retain PACD and division access while filtering active notices. |
+| Backend file | `app/Notices.php` | Proposed modification to the expiry filter. |
+
+Acceptance checks: Expired notices are absent from the active banner; archive access and assigned-division restrictions remain enforced. These are planned checks, not executed results. Include actual repository owners, proposed additions/removals, jobs or configuration when relevant; do not fabricate locations. Both client views keep material verification limits and information needed, while the ordinary view omits technical file tables, internal logs and test counts.
+
+The complete **Questions and answers** section remains last in both client views, including resolved/defaulted questions, available options and pending source/verification questions. Use plain answer wording while retaining exact provenance in the ledger: “Option 1 was chosen during review; not stated in the original request” for a developer choice, or “No answer received; option 1 was used as the proposed approach” for a default. A verified client answer is identified only when supported by attributable evidence. This wording does not record new client confirmation. Replies by question/request ID resume the same review, update dependent text/checks and preserve answer revisions; a partial review remains partial.
+
+To save this presentation explicitly:
+
+```text
+Save this client summary.
+```
+
+This adds `client-summary.md` alongside the full `reviewed-requirements.md`, `review-state.json` and appropriate source copy under the existing safe run/revision rules. A general “save this review” still saves the full handoff, and an explicit project-document destination follows its ownership rules. The client summary alone is not a planning handoff. Rendering stops after the revision summary and Q&A; implementation, sending and committing require separate authorization.
+
 ## Follow-ups, saving and planning
 
 These are independent or sequential **agent-chat** examples, using the identified current review:
@@ -203,10 +282,18 @@ Python 3.11+ can validate a saved ledger's IDs, source coverage, decision proven
 python '<installed-skill-dir>/scripts/review_state.py' validate '<run-folder>/review-state.json' --check-files --handoff '<run-folder>/reviewed-requirements.md'
 ```
 
-The `parse` helper checks document-path and option tokens when syntax is ambiguous; use it only with a real accessible document. PowerShell from the target application folder, replacing the installed directory and PDF path:
+The `parse` helper checks document-path and option tokens when syntax is ambiguous. For a document invocation, use a real accessible document. PowerShell from the target application folder, replacing the installed directory and PDF path:
 
 ```powershell
 python '<installed-skill-dir>/scripts/review_state.py' parse -- --detailed 'requirements.pdf'
 ```
+
+Client syntax can be checked without a document path, from the same folder and with the same installed-directory replacement:
+
+```powershell
+python '<installed-skill-dir>/scripts/review_state.py' parse -- --client --detailed
+```
+
+This checks syntax only; it cannot identify the conversation's review or generate client output. It accepts either client-flag order and rejects the conflicting inputs described above.
 
 `validate` without `--check-files` checks the ledger only; without `--handoff` it does not check Markdown coverage. This helper does not translate requests, inspect PDF pixels, determine root causes, prove access, or judge acceptance semantics. The agent must compare the Markdown handoff with the source and ledger before planning. No terminal helper command is a chat option.

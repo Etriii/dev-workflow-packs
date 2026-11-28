@@ -13,7 +13,7 @@ Public skills work without PhasePilot. Use these stages when the corresponding n
 | When | Skills | Expected result |
 |---|---|---|
 | The task needs clarification | `prompt-intake` | Versioned questions, recommendations, custom answers and a concrete next action. |
-| Informal feedback or a PDF needs application-grounded review before planning | `request-review` | Categorized requests, current-behavior evidence, decisions and an optional reviewed-requirements handoff. |
+| Informal feedback or a PDF needs application-grounded review before planning | `request-review` | Categorized requests, current-behavior evidence, decisions and an optional reviewed-requirements handoff. `--client [--detailed]` presents the identified review as neutral revision statements with original wording, deliverables, proposed details and complete Q&A; it starts no investigation or implementation. |
 | A Markdown plan, PDF brief or new task needs planning | `implementation-plan` | Balanced defaults to compact phase folders, selective reading and safe-split assessment. Detailed/Light remain explicit. Later selected tasks complete owned implementation/checks, record reversible decisions and recommend the next exact prompt; named integration handles combined checks and guarded worktree cleanup. Planning never executes Git changes. |
 | An implementation plan needs review | `plan-review`; optionally `critical-review` or `deep-critique` | Coverage, dependency findings and justified changes. Choose a short planning challenge or a broader assessment as needed. |
 | Decisions or technical risks remain | `blocker-check` and relevant engineering reviewers | Evidence-linked blockers and decisions before dependent implementation. |

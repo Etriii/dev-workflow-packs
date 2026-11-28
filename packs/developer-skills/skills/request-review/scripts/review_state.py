@@ -54,7 +54,7 @@ def parse_request(tokens: list[str]) -> dict:
         tokens = tokens[1:]
     if tokens == ["help"]:
         return {"mode": "help", "source": None}
-    detailed = summary = False
+    detailed = summary = client = False
     positional = []
     for token in tokens:
         if token == "--detailed":
@@ -65,6 +65,10 @@ def parse_request(tokens: list[str]) -> dict:
             if summary:
                 raise ReviewError("Duplicate --summary")
             summary = True
+        elif token == "--client":
+            if client:
+                raise ReviewError("Duplicate --client")
+            client = True
         elif token.startswith("-"):
             raise ReviewError(f"Unknown option: {token}")
         else:
@@ -73,11 +77,17 @@ def parse_request(tokens: list[str]) -> dict:
         raise ReviewError("Supply one document path, or paste requests as chat text")
     if summary and (detailed or positional):
         raise ReviewError("--summary cannot start a new review or combine with --detailed")
+    if client and summary:
+        raise ReviewError("--client cannot combine with --summary")
+    if client and positional:
+        raise ReviewError("--client uses an identified review and cannot start a new review")
     source = positional[0] if positional else None
     if source and Path(source).suffix.lower() not in {".pdf", ".md", ".txt"}:
         raise ReviewError("Document path must end in .pdf, .md or .txt")
     if source and not Path(source).is_file():
         raise ReviewError(f"Document file not found: {source}")
+    if client:
+        return {"mode": "client-detailed" if detailed else "client", "source": None}
     return {"mode": "summary" if summary else "detailed" if detailed else "default", "source": source}
 
 

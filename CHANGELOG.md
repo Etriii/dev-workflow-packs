@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Add request-review `--client` and `--client --detailed` for neutral revision summaries with original wording/pages, change types, problems, deliverables, expected results, short information requests, proposed-detail markers and complete closing Q&A; reuse recorded reviews without new investigation or defaults.
 - Place request-review PDF filenames and physical pages immediately after original quotations consistently, and retain source citations in summaries while keeping application routes in page/access details.
 - End request-review reports and summaries with every question and its options, recommendation and current answer; preserve request order and inline references, and reuse decision records for missing sources and factual verification.
 - Standardize request-review overviews with verbatim source wording beside English request summaries, explanatory findings and actionable recommendations; retain the same overview in detailed reviews.

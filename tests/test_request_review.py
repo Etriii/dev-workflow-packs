@@ -209,6 +209,24 @@ class ReviewStateTests(unittest.TestCase):
         with self.assertRaisesRegex(review_state.ReviewError, "not found"):
             review_state.parse_request(["missing requirements.pdf"])
 
+    def test_client_modes_reuse_review_without_document_input(self):
+        self.assertEqual(review_state.parse_request(["--client"]), {"mode": "client", "source": None})
+        for tokens in (["--client", "--detailed"], ["--detailed", "--client"], ["--", "--client", "--detailed"]):
+            with self.subTest(tokens=tokens):
+                self.assertEqual(review_state.parse_request(tokens), {"mode": "client-detailed", "source": None})
+
+    def test_client_rejects_new_input_conflicting_modes_and_duplicate_flags(self):
+        document = self.root / "requirements with spaces.pdf"
+        document.write_bytes(b"%PDF-1.4\n")
+        for tokens in (
+            ["--client", str(document)], [str(document), "--client", "--detailed"],
+            ["--client", "missing.pdf"], ["--client", "--summary"], ["--summary", "--client"],
+            ["--client", "--summary", "--detailed"], ["--client", "--client"],
+            ["--client", "--detailed", "--detailed"], ["--client", "--unknown"],
+        ):
+            with self.subTest(tokens=tokens), self.assertRaises(review_state.ReviewError):
+                review_state.parse_request(tokens)
+
 
 if __name__ == "__main__":
     unittest.main()

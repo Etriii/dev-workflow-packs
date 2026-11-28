@@ -16,6 +16,8 @@ Reuse the existing decision record for all questions; do not create a separate i
 
 ## Presentation
 
+These table and source-display rules apply to ordinary default/detailed reviews and summaries. `--client` and `--client --detailed` instead use the neutral blocks and page-only quotation suffix defined in [client revision summaries](client-summary.md), while preserving the same review scope and final Q&A.
+
 Use actual application areas, such as Announcements or Profile, or group by role when clearer. Avoid architectural grouping and repeating a shared request under each role. Plain concise English; no stock intro/recap, hashes by default, absolute machine paths, Project column, empty sections or repeated N/A. Original quotations retain their source language. Hyphens are list markers and separators. File operations (`Inspect`, `Proposed modification`, `Proposed addition`, `Proposed rename`, `Proposed removal`) differ from purpose (`New`, `Improvement`, `Fix`, `Refactor`, `Removal`, `Unclear`). Never label proposed work as completed.
 
 Keep requests in their original source order with stable IDs. Do not move a request because it needs a question or verification; if grouping would reorder requests, repeat an area heading where necessary. Leave the finding and recommendation in place and add a short reference such as `Needs clarification — Q-02`, `Needs your verification — Q-03` or `Source needed — Q-04` in the recommendation/readiness cell. Resolved references show their current provenance. The full question and options belong in the final Q&A section.
