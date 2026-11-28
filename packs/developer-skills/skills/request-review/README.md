@@ -137,6 +137,20 @@ app/Notices.php | Proposed modification | Fix active filtering
 
 The detailed form keeps the same original quotation, source/page citation and overview, then adds the inspected source range, rationale and a proposed filtering acceptance check. A summary replaces source/file tables with concise category bullets describing intended behavior and route/access restrictions. It retains request IDs and source citations immediately after each request description, for example `REQ-01 — Hide expired notices from the active PACD banner — requirements.pdf, page 4`. It still ends with the complete Q&A described below.
 
+### Requests by change type
+
+Ordinary default, detailed, summary and saved full reviews add a compact **Requests by change type** table near the bottom, after request details, verification and notes and immediately before the final Q&A. The columns contain request IDs only. Each request gets one row in original order; an ID appears in every applicable column on that same row. A fictional example:
+
+| Additions | Revisions | Removals |
+|---|---|---|
+| REQ-03 | — | — |
+| — | REQ-22 | REQ-22 |
+| REQ-32 | REQ-32 | — |
+
+This makes mixed changes visible without moving the full requests or ranking their implementation order. Additions introduce capabilities; Revisions change existing behavior, presentation or structure, including corrections/refactors; Removals retire active functionality. Classification follows the reviewed behavior and scope, not merely the request's type field or whether a source file is added/deleted.
+
+Already-satisfied requests with no planned change and excluded/deferred requests are identified on short **No change needed** or **Excluded/deferred** ID lines below the table. Unclear classifications remain on a **Needs classification** line with relevant question references; they are not forced into a column. Missing details do not prevent grouping when the kind of change is clear. Every displayed request is accounted for, and filtered views retain their selected scope. When no included work can be grouped, the review says so rather than inventing rows. Client summaries keep their agreed block layout unless this index is explicitly requested there. No new command, investigation, state schema, approval or file write is introduced.
+
 ### Questions, answers and verification needs
 
 Reuse the review's existing questions and decision records. Requests stay in original source order; a request needing input stays in place with its uncertainty and a question reference in the recommendation/readiness cell, such as `Needs clarification — Q-01`, `Needs your verification — Q-02` or `Source needed — Q-03`. Category headings may repeat to preserve that order. New questions use stable `Q-01` IDs; resumed reviews retain their existing decision IDs. No extra input queue or table column is added.
@@ -148,6 +162,13 @@ For example, a review containing the notice request and a later REQ-02 about an 
 ```text
 Verification: Notice query inspected; runtime and report-format compliance not verified.
 Notes: Changes are proposed scope only; implementation is not authorized.
+
+Requests by change type
+
+| Additions | Revisions | Removals |
+|---|---|---|
+| — | REQ-01 | — |
+| — | REQ-02 | — |
 
 Questions and answers
 

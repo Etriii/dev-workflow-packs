@@ -37,6 +37,22 @@ Detailed keeps the same overview columns, categories, IDs and original quotation
 
 Summary reuses recorded state. State intended behavior by familiar category and page/route/access, keeping restrictions and dependencies that affect scope. Retain each request ID and its source citation; when the original quotation is omitted, place the citation immediately after the request description, including the physical PDF page. Briefly list applied defaults and unresolved factual blockers. Omit file tables, inspected code lines, logs and investigation history; retain presented options in the final Q&A but omit other rejected alternatives. Natural filters retain IDs and excluded history in state. If excluding one request breaks an included dependency, explain that consequence rather than silently dropping the dependency. State when summary evidence is from a prior review and may be stale; do not silently reassess code.
 
+## Change-type index
+
+In ordinary default, detailed, summary and saved full reviews, add **Requests by change type** near the bottom, after request details, verification and notes, immediately before **Questions and answers**. Use exactly three columns: `Additions | Revisions | Removals`. Cells contain request IDs only, or `—` when that row has no request in the column. Keep the main requests in their original order; this is a navigation index, not a new priority, execution order or readiness assessment. Client output keeps its separate block layout unless the index is explicitly requested there.
+
+Use one row per request, in original request order. Repeat the same ID across every applicable column **in that same row**. Do not pack each column independently or imply that different requests on a row are related. For example:
+
+| Additions | Revisions | Removals |
+|---|---|---|
+| REQ-03 | — | — |
+| — | REQ-22 | REQ-22 |
+| REQ-32 | REQ-32 | — |
+
+Classify the included requested/planned behavior, not individual source-file operations or only the request's single type field. **Additions** introduces a capability; **Revisions** changes existing behavior, presentation or structure, including corrections/refactors; **Removals** retires active functionality. A request may require any combination. Adding a source file to revise an existing feature does not by itself make the request an Addition, and preserving historical data does not negate a Removal of active behavior.
+
+Do not list excluded/deferred requests or already-satisfied requests with no planned change as pending work. When present, identify their IDs on short separate lines below the table, labeled **Excluded/deferred** and **No change needed**. Keep unresolved classifications on a **Needs classification** line with question references when user input is required; never guess a category or default an unknown fact. A missing detail does not prevent grouping when the change type is already clear. Reconcile every request in the displayed scope with either its applicable columns or one of these lines; filtered views do not restore out-of-view scope. If there is no classifiable included work, say so briefly rather than inventing rows. Reuse the review state without a new schema or investigation.
+
 ## Final questions and answers
 
 End every default, detailed, summary and saved review with **Questions and answers**, after verification, notes and other closing material. List all questions raised during the identified review together, including those asked earlier through interactive prompts and those already answered or defaulted. The interactive three-question limit does not limit this final list. Order questions by their affected requests' original order, then by question order; keep IDs stable. Filtered views still retain the complete Q&A, marking questions about excluded or out-of-view requests accordingly without restoring their scope. If no questions were raised and none are needed, say so briefly here.
