@@ -106,6 +106,33 @@ class ReviewStateTests(unittest.TestCase):
         with self.assertRaisesRegex(review_state.ReviewError, "factual blocker"):
             review_state.validate_state(state)
 
+    def test_factual_question_reuses_decisions_and_preserves_prior_answers_and_order(self):
+        request_order = [request["id"] for request in self.state["requests"]]
+        prior_answer = deepcopy(self.state["decisions"][0])
+        self.state["decisions"].append({
+            "id": "Q-03", "request_ids": ["REQ-03"],
+            "question": "Can you provide the official queue visibility policy?",
+            "options": [], "recommended": None, "rationale": "Policy evidence is unavailable",
+            "selected": None, "origin": "pending",
+            "unresolved_facts": ["Monitor data visibility policy unknown"],
+        })
+        saved = self.root / "review-state.json"
+        saved.write_text(json.dumps(self.state, ensure_ascii=False), encoding="utf-8")
+        state = json.loads(saved.read_text(encoding="utf-8"))
+        self.assertEqual(review_state.validate_state(state)["decisions"], 3)
+
+        question = state["decisions"][-1]
+        question["selected"] = "Use the policy in the supplied office handbook."
+        question["origin"] = "selected by user"
+        review_state.validate_state(state)
+        self.assertEqual(question["unresolved_facts"], ["Monitor data visibility policy unknown"])
+        self.assertEqual(state["decisions"][0], prior_answer)
+        self.assertEqual([request["id"] for request in state["requests"]], request_order)
+
+        question["origin"] = "default applied"
+        with self.assertRaisesRegex(review_state.ReviewError, "Default must select"):
+            review_state.validate_state(state)
+
     def test_local_fix_without_deployment_proof_and_excluded_dependency_remain_recorded(self):
         state = deepcopy(self.state)
         state["requests"][0]["assessment"] = "Already satisfied"

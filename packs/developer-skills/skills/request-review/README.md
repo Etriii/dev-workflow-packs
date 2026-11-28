@@ -116,7 +116,7 @@ Each finding explains current behavior, its gap or match against the request, an
 
 | ID — Request summary | Original request — verbatim | Finding | Recommendation / readiness |
 |---|---|---|---|
-| REQ-01 — Hide expired notices from the active PACD banner | “Expired notices remain on PACD.” — chat feedback | The source query does not filter expiry, so expired notices can remain in the active banner. Source inspected; runtime not checked. | Filter active notices and retain archive access. Archive-only retention: Default applied. Ready to plan; browser verification remains pending. |
+| REQ-01 — Hide expired notices from the active PACD banner | “Expired notices remain on PACD.” — chat feedback | The source query does not filter expiry, so expired notices can remain in the active banner. Source inspected; runtime not checked. | Filter active notices and retain archive access. Q-01: Default applied. Ready to plan; browser verification remains pending. |
 
 ```text
 REQ-01 - Supporting details
@@ -127,25 +127,35 @@ File | Proposed action | Purpose
 app/Notices.php | Proposed modification | Fix active filtering
 ```
 
-The detailed form keeps the same original quotation and overview, then adds the inspected source range, rationale and a proposed filtering acceptance check. A fictional confirmation summary is:
+The detailed form keeps the same original quotation and overview, then adds the inspected source range, rationale and a proposed filtering acceptance check. A summary replaces source/file tables with concise category bullets describing intended behavior and route/access restrictions; it still ends with the complete Q&A described below.
+
+### Questions, answers and verification needs
+
+Reuse the review's existing questions and decision records. Requests stay in original source order; a request needing input stays in place with its uncertainty and a question reference in the recommendation/readiness cell, such as `Needs clarification — Q-01`, `Needs your verification — Q-02` or `Source needed — Q-03`. Category headings may repeat to preserve that order. New questions use stable `Q-01` IDs; resumed reviews retain their existing decision IDs. No extra input queue or table column is added.
+
+Every default, detailed and summary review ends with **Questions and answers**, after verification, notes and other closing material. It lists all questions raised during that review together, including earlier host prompts, answered questions, applied defaults, and pending requests for facts, sources or user verification. Order entries by affected request order, then question order. Each entry references its request IDs, gives the question, meaningful options with tradeoffs, recommendation/default and rationale when available, and the current answer with provenance. Missing facts have no default; ask for the exact information or evidence needed. Agent-owned investigation stays an evidence limit rather than becoming homework for the user.
+
+For example, a review containing the notice request and a later REQ-02 about an unavailable report template could close as follows. The template request remains in its original position above with `Source needed — Q-02`:
 
 ```text
-Announcements
-- PACD dashboard - /pacd/dashboard; signed-in PACD staff in their assigned division: Hide expired notices from the active banner and keep them in the archive.
-Defaults applied: Keep expired notices in archive.
-```
+Verification: Notice query inspected; runtime and report-format compliance not verified.
+Notes: Changes are proposed scope only; implementation is not authorized.
 
-A material question appears in **both** review depths. For example, after inspecting the existing archive:
+Questions and answers
 
-```text
-Where should expired notices remain available?
-1. Archive only - Recommended, Default. Preserves existing history without active-banner clutter.
+Q-01 — REQ-01: Where should expired notices remain available?
+1. Archive only — Recommended / Default. Preserves history without active-banner clutter.
 2. Active banner with an Expired label. Keeps visibility but mixes active and expired items.
 3. Hide from both views. Removes them from normal navigation.
 Custom answer is welcome.
+Rationale: The existing archive already supports retrieval.
+Answer: Default applied — option 1; no explicit user answer received after the question was presented and time allowed.
+
+Q-02 — REQ-02: Can you provide the official report template or an accessible copy?
+Answer: Pending. The template is needed to verify columns, totals, layout and signature blocks. No factual default applies.
 ```
 
-If unanswered after a reasonable opportunity, the review records option 1 as **Default applied**. It never records a preselected UI choice as a submitted answer. “Use option 2” later records **Selected by user** and updates acceptance checks. A factual unknown, such as an unreadable PDF line, remains unresolved.
+The three-question limit applies only to each interactive prompt, never to the final list. A question first presented in the closing section remains pending until there has been a reasonable answer opportunity; recommendations are not silently defaulted before presentation. A preselected UI choice is not a submitted answer. “Q-01: Use option 2” later records **Selected by user**, updates acceptance checks, and retains the prior default in revision history. Providing a factual answer does not prove uninspected evidence. Filtered follow-ups still include the full Q&A, labeling questions about excluded or out-of-view requests without restoring their scope. Resolved questions stay listed with their current answers instead of being asked again; unresolved user questions cannot be left only in notes or replaced by default-only bullets. If none exist, the closing section says so briefly.
 
 ## Follow-ups, saving and planning
 
@@ -156,6 +166,8 @@ Show the details.
 Summarize only REQ-01 and REQ-04.
 Leave account management out and summarize again.
 Change REQ-03 to option 2.
+Q-01: Use option 2.
+REQ-02: Use the report template at "official-template.pdf".
 Use your recommendations for the questions shown.
 Save this review.
 Review this scope with plan-review before implementation planning.
