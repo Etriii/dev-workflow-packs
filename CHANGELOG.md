@@ -2,6 +2,7 @@
 
 ## Unreleased collection 0.1.0
 
+- Place request-review PDF filenames and physical pages immediately after original quotations consistently, and retain source citations in summaries while keeping application routes in page/access details.
 - End request-review reports and summaries with every question and its options, recommendation and current answer; preserve request order and inline references, and reuse decision records for missing sources and factual verification.
 - Standardize request-review overviews with verbatim source wording beside English request summaries, explanatory findings and actionable recommendations; retain the same overview in detailed reviews.
 - Make implementation-plan default to compact Balanced packages with phase-owned prompts, bounded status output and compatible profile revisions; retain explicit Detailed and Light layouts.
